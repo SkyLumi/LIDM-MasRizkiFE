@@ -8,8 +8,8 @@ export default defineConfig({
     // --- TAMBAHAN PENTING (OBAT ERROR TADI) ---
     // Izinkan domain abang diakses
     allowedHosts: [
-      'cloudsup.id',
-      'www.cloudsup.id'
+      'dashboard.cloudsup.id',
+      'www.dashboard.cloudsup.id'
     ],
     host: true, // Ini biar dia listen ke 0.0.0.0 (IP publik)
     // ------------------------------------------
