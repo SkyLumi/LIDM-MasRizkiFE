@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import GameCard from './components/GameCard';
 import FilterDropdown from './components/FilterDropdown';
-import PlayerProfileCard from '../Teacher/Dashboard/components/PlayerProfileCard';
 import TutorialCard from '../Teacher/Dashboard/components/TutorialCard';
 
 const DashboardGamesContainer: React.FC = () => {
@@ -102,9 +101,7 @@ const DashboardGamesContainer: React.FC = () => {
           </div>
 
           {/* Right Side - Player Profile and Tutorial */}
-          <div className="w-[312px] flex-shrink-0 flex flex-col gap-6">
-            <PlayerProfileCard />
-            
+          <div className="w-[312px] flex-shrink-0 flex flex-col gap-6">            
             {/* Tutorial Card with Gradient Background */}
             <div className="bg-gradient-to-r from-[#E82D2F] to-[#C21315] rounded-2xl shadow-[inset_0_8px_16px_rgba(255,255,255,0.16),inset_0_2px_0_rgba(255,255,255,0.1)] p-7">
               <TutorialCard />

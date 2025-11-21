@@ -1,19 +1,31 @@
-// src/features/Teacher/Report/api/players.ts
-
-export type Player = { name: string; absen: string; image: string };
+export type Player = { 
+  name: string; 
+  absen: string; 
+  image: string;
+};
 
 export async function fetchPlayers(): Promise<Player[]> {
-  const res = await fetch('https://jsonplaceholder.typicode.com/users', {
-    headers: { Accept: 'application/json' },
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/v1/guru/murid/list`, {
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+    },
   });
-  if (!res.ok) throw new Error('Gagal mengambil data pemain');
+
+  if (!res.ok) throw new Error("Gagal mengambil data pemain");
+
   const data = await res.json();
-  const list = Array.isArray(data) ? data : data?.players || [];
-  return list
-    .map((p: any) => ({
-      name: p.name ?? p.fullName ?? '',
-      absen: String(p.absen ?? p.id ?? ''),
-      image: p.image ?? p.avatar ?? '',
-    }))
-    .filter((p: Player) => p.name);
+
+  // Kalo backend balikin {status, data}
+  const list = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data)
+    ? data.data
+    : [];
+
+  return list.map((p: any) => ({
+    name: p.name ?? "",
+    absen: String(p.absen ?? ""),
+    image: p.image ?? "",
+  }));
 }

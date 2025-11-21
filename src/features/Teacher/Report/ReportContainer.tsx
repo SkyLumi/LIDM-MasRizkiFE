@@ -1,4 +1,5 @@
 import React from "react";
+import { getWeeklyAnalytics } from "../../../services/api";
 import {
   ReportHeader,
   OverallProgressCard,
@@ -16,9 +17,30 @@ import {
 // import { Gamepad2, Clock } from 'lucide-react';
 import { SelectedPlayerProvider } from "./contexts/SelectedPlayerContext";
 
+export interface WeeklyAnalytics {
+  fokus: number;
+  keseimbangan: number;
+  ketangkasan: number;
+  koordinasi: number;
+  memori: number;
+  waktu_reaksi: number;
+};
+
 const currentStudentId = 4;
 
 const ReportContainer: React.FC = () => {
+
+const [weekly, setWeekly] = React.useState<WeeklyAnalytics | null>(null);
+
+  React.useEffect(() => {
+    (async () => {
+      const data = await getWeeklyAnalytics(currentStudentId);
+      setWeekly(data.data);
+    })();
+  }, []);
+
+  if (!weekly) return <p>Loading...</p>;
+  
 
   return (
     <SelectedPlayerProvider>
@@ -42,7 +64,7 @@ const ReportContainer: React.FC = () => {
 
           {/* Skill Cards Grid - 3x2 */}
           
-            <SkillCard studentId={currentStudentId} />
+          <SkillCard studentId={currentStudentId} />
 
           {/* Game History Section */}
           <GameHistorySection studentId={currentStudentId} />
@@ -51,13 +73,13 @@ const ReportContainer: React.FC = () => {
           <OverallProgressReportCard />
 
           {/* Focus Detail Card */}
-          <FocusDetailCard />
+          <FocusDetailCard fokusPoint={weekly.fokus}  />
 
           {/* Coordination Detail Card */}
-          <CoordinationDetailCard />
+          <CoordinationDetailCard coordinatePoint={weekly.koordinasi}/>
 
           {/* Reaction Time Detail Card */}
-          <ReactionTimeDetailCard />
+          <ReactionTimeDetailCard ReactionTimePoint={weekly.waktu_reaksi}/>
 
           {/* Balance Detail Card */}
           <BalanceDetailCard />

@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import PlayerProfileCard from "../../Teacher/Dashboard/components/PlayerProfileCard";
 
 const GameDetailContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -163,10 +162,6 @@ const GameDetailContainer: React.FC = () => {
 
         {/* Right Side - Profile Card and Thumbnail */}
         <div className="flex flex-col gap-6">
-          {/* Profile Card */}
-          <div>
-            <PlayerProfileCard />
-          </div>
 
           {/* Thumbnail */}
           <div className="flex-shrink-0">

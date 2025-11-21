@@ -163,20 +163,24 @@ const GameHistorySection: React.FC<GameHistoryProps> = ({ studentId }) => {
         {/* Tabs */}
         <div className="flex gap-0 border-b border-[#084EC5]">
           <button
-            onClick={() => setActiveTab('games')}
-            className={`px-4 py-2 font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
-              activeTab === 'games' ? 'text-[#084EC5] border-b-2 border-[#084EC5]' : 'text-[#084EC5] opacity-70 hover:opacity-100'
+            onClick={() => setActiveTab("games")}
+            className={`px-4 py-2 rounded-none font-['Raleway']  font-bold text-[14px] transition-colors  bg-transparent ${
+              activeTab === "games"
+                ? "text-[#084EC5] border-b-2 border-b-[#084EC5]"
+                : "text-[#084EC5] opacity-70 hover:opacity-100"
             }`}
-            style={{ borderBottomWidth: activeTab === 'games' ? '2px' : '0' }}
+            style={{ borderBottomWidth: activeTab === "games" ? "2px" : "0" }}
           >
             Jumlah Game Dimainkan
           </button>
           <button
-            onClick={() => setActiveTab('time')}
-            className={`px-4 py-2 font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
-              activeTab === 'time' ? 'text-[#084EC5] border-b-2 border-[#084EC5]' : 'text-[#084EC5] opacity-70 hover:opacity-100'
+            onClick={() => setActiveTab("time")}
+            className={`px-4 py-2 rounded-none font-['Raleway'] font-bold text-[14px] transition-colors bg-transparent ${
+              activeTab === "time"
+                ? "text-[#084EC5]  border-b-2 border-b-[#084EC5] "
+                : "text-[#084EC5] opacity-70 hover:opacity-100 "
             }`}
-            style={{ borderBottomWidth: activeTab === 'time' ? '2px' : '0' }}
+            style={{ borderBottomWidth: activeTab === "time" ? "2px" : "0" }}
           >
             Waktu Bermain
           </button>
@@ -233,7 +237,7 @@ const GameHistorySection: React.FC<GameHistoryProps> = ({ studentId }) => {
                     weekData.map((value, dayIndex) => (
                       <div
                         key={`${weekIndex}-${dayIndex}`}
-                        className="aspect-square border-[15px] border-[#D6EFFF] flex items-center justify-center"
+                        className="border-[15px]  border-[#D6EFFF] flex items-center justify-center py-[4px]"
                         style={{ backgroundColor: getHeatmapColor(value, 15) }}
                       >
                         <p className="font-['Raleway'] font-bold text-[#262626] text-center text-xs">
@@ -312,7 +316,7 @@ const GameHistorySection: React.FC<GameHistoryProps> = ({ studentId }) => {
                     weekData.map((value, dayIndex) => (
                       <div
                         key={`${weekIndex}-${dayIndex}`}
-                        className="aspect-square border-[15px] border-[#D6EFFF] flex items-center justify-center"
+                        className="border-[15px]  border-[#D6EFFF] flex items-center justify-center py-[4px]"
                         style={{ backgroundColor: getHeatmapColor(value, 50) }}
                       >
                         <p className="font-['Raleway'] font-bold text-[#262626] text-center text-xs">
