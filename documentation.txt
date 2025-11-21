@@ -1,0 +1,67 @@
+Menambahkan prop `devRole` untuk mode development agar sidebar tetap berfungsi tanpa login.
+
+
+[2 tools called]
+
+Memperbarui MainLayout agar mendukung prop devRole.
+
+
+[2 tools called]
+
+Mengupdate App.tsx untuk memberikan contoh penggunaan.
+
+
+[2 tools called]
+
+Memeriksa error:
+
+
+[1 tool called]
+
+Sidebar siap tanpa login (mode development).
+
+## Solusi untuk Development
+
+Sidebar disetel untuk mode development tanpa login.
+
+### Cara Kerja
+
+1. **GlobalSidebar** — menambahkan prop `devRole` untuk override role user
+2. **MainLayout** — menambahkan prop `devRole` yang diteruskan ke sidebar
+3. **App.tsx** — menambahkan `devRole="admin"` dan `devRole="teacher"` pada routes
+
+### Cara Penggunaan
+
+Saat development, tambahkan prop `devRole` di `MainLayout`:
+
+```tsx
+// Test sebagai Admin
+<MainLayout devRole="admin">
+  <YourPage />
+</MainLayout>
+
+// Test sebagai Teacher  
+<MainLayout devRole="teacher">
+  <YourPage />
+</MainLayout>
+
+// Test sebagai Student
+<MainLayout devRole="student">
+  <YourPage />
+</MainLayout>
+```
+
+### Contoh dalam App.tsx
+
+Saya sudah menambahkan di beberapa routes sebagai contoh:
+- Routes `/admin/*` menggunakan `devRole="admin"`
+- Routes `/teacher/*` menggunakan `devRole="teacher"`
+
+### Keuntungan
+
+- Bisa test sidebar tanpa fitur login
+- Bisa ganti role kapan saja
+- Saat production siap, cukup hapus prop `devRole` untuk kembali ke sistem login
+- Tidak mengubah integrasi dengan AuthContext
+
+Untuk mematikan devRole, hapus prop `devRole` dari `MainLayout`, dan sidebar akan kembali menggunakan role dari `AuthContext`.
