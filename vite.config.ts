@@ -8,7 +8,7 @@ export default defineConfig({
     // Setting Proxy biar dianggap satu domain
     proxy: {
       '/v1': {
-        target: 'http://127.0.0.1:5000', // Alamat Backend Flask Abang
+        target: 'https://cloudsup.id:5000', // Alamat Backend Flask Abang
         changeOrigin: true,
         secure: false,
       }
