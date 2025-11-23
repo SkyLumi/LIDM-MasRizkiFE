@@ -1,7 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-const CoordinationDetailCard: React.FC = () => {
+
+interface CoordinationDetailCardProps {
+  coordinatePoint: number;
+}
+
+const CoordinationDetailCard: React.FC<CoordinationDetailCardProps> = ({ coordinatePoint }) => {
+
   const [activeWeek, setActiveWeek] = useState<'week31' | 'week32'>('week31');
   const games = [
     {
@@ -257,7 +263,7 @@ const CoordinationDetailCard: React.FC = () => {
           {/* Percentage Display */}
           <div className="mb-4">
             <p className="font-raleway font-bold text-[30px] leading-[40px] text-white">
-              55.4%
+              {coordinatePoint} Points
             </p>
           </div>
 

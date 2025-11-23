@@ -4,7 +4,12 @@ import { LucideInfo } from "lucide-react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-const FocusDetailCard: React.FC = () => {
+interface FocusDetailCardProps {
+  fokusPoint: number;
+}
+
+const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
+
   const [activeWeek, setActiveWeek] = useState<"week31" | "week32">("week31");
   const games = [
     {
@@ -244,7 +249,7 @@ const FocusDetailCard: React.FC = () => {
               {/* Percentage Display */}
               <div className=" flex items-end">
                 <p className="font-raleway font-bold text-[30px]  text-white">
-                  81.1%
+                  {fokusPoint} Points
                 </p>
               </div>
             </div>
@@ -273,7 +278,7 @@ const FocusDetailCard: React.FC = () => {
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2">
                     <div className="flex flex-col items-center">
                       <p className="font-raleway font-semibold text-[10px] leading-[10px] text-white bg-transparent mt-7 whitespace-nowrap">
-                        81.1
+                        {fokusPoint}
                       </p>
                       <div className="w-px bg-[#0D469B] mt-1" />
                     </div>

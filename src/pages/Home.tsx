@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ChevronDown } from 'lucide-react';
 import sidebarLogo from '../assets/images/sidebar-logo.svg';
 import logo from '../assets/images/HorizontalLogo.svg';
-import { getSchools } from '../services/api';
+import { getSchools, registerGuru } from '../services/api';
 
 interface SchoolData {
   id: number;
   nama: string;
 }
 
-const Home: React.FC = () => {
+const RegisterPage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const [schoolsList, setSchoolsList] = useState<SchoolData[]>([]);
+  const [isSchoolsLoading, setIsSchoolsLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     fullName: '',
     school: '',
@@ -20,23 +26,36 @@ const Home: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [schoolDropdownOpen, setSchoolDropdownOpen] = useState(false);
   const [schoolSearch, setSchoolSearch] = useState('');
 
-  const [schoolsList, setSchoolsList] = useState<SchoolData[]>([]);
-  const [isLoadingSchools, setIsLoadingSchools] = useState(false);
+  const [isFocused, setIsFocused] = useState({
+    fullName: false,
+    school: false,
+    email: false,
+    password: false,
+  });
+
+  const [isTouched, setIsTouched] = useState({
+    fullName: false,
+    school: false,
+    email: false,
+    password: false,
+    agreeTerms: false,
+  });
 
   useEffect(() => {
     const loadSchools = async () => {
-      setIsLoadingSchools(true);
+      setIsSchoolsLoading(true);
       try {
-        const data = await getSchools();
+        const data = await getSchools(); 
         setSchoolsList(data);
       } catch (error) {
-        console.error("Gagal ambil sekolah:", error);
+        console.error("Error:", error);
       } finally {
-        setIsLoadingSchools(false);
+        setIsSchoolsLoading(false);
       }
     };
     loadSchools();
@@ -46,34 +65,82 @@ const Home: React.FC = () => {
     school.nama.toLowerCase().includes(schoolSearch.toLowerCase())
   );
 
+  const validateEmail = (email: string) => {
+    if (!email) return false;
+    return /\S+@\S+\.\S+/.test(email);
+  };
+
+  // Validasi real-time
+  const getFullNameError = () => {
+    if (!isTouched.fullName) return '';
+    if (!formData.fullName.trim()) {
+      return 'Nama lengkap harus diisi';
+    }
+    return '';
+  };
+
+  const getSchoolError = () => {
+    if (!isTouched.school) return '';
+    if (!formData.school) {
+      return 'Asal sekolah harus dipilih';
+    }
+    return '';
+  };
+
+  const getEmailError = () => {
+    if (!isTouched.email) return '';
+    
+    if (!formData.email.trim()) {
+      return 'Email harus diisi';
+    }
+    
+    if (!validateEmail(formData.email)) {
+      return 'Format email tidak valid';
+    }
+    
+    return '';
+  };
+
+  const getPasswordError = () => {
+    if (!isTouched.password) return '';
+    
+    if (!formData.password) {
+      return 'Kata sandi harus diisi';
+    }
+    
+    if (formData.password.length < 6) {
+      return 'Kata sandi minimal 6 karakter';
+    }
+    
+    return '';
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
   };
 
-const handleSchoolSelect = (school: SchoolData) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      school: school.nama,
-      schoolId: school.id
-    }));
+  const handleSchoolSelect = (school: SchoolData) => {
+    setFormData(prev => ({ ...prev, school: school.nama, schoolId: school.id }));
     setSchoolSearch(school.nama);
     setSchoolDropdownOpen(false);
-    if (errors.school) {
-      setErrors(prev => ({ ...prev, school: '' }));
-    }
+    setIsTouched(prev => ({ ...prev, school: true }));
   };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
+    
+    // Pastikan touched state aktif untuk validasi
+    setIsTouched({ 
+      fullName: true, 
+      school: true, 
+      email: true, 
+      password: true,
+      agreeTerms: true 
+    });
 
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Nama lengkap harus diisi';
@@ -85,7 +152,7 @@ const handleSchoolSelect = (school: SchoolData) => {
 
     if (!formData.email.trim()) {
       newErrors.email = 'Email harus diisi';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!validateEmail(formData.email)) {
       newErrors.email = 'Format email tidak valid';
     }
 
@@ -103,30 +170,53 @@ const handleSchoolSelect = (school: SchoolData) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (validateForm()) {
-      console.log('Registration data:', formData);
-      // Handle registration logic here
+      setIsLoading(true);
+      try {
+        const payload = {
+            nama_lengkap: formData.fullName,
+            email: formData.email,
+            kata_sandi: formData.password,
+            id_sekolah: formData.schoolId
+          };
+
+        const result = await registerGuru(payload);
+        console.log('Registrasi Sukses:', result);        
+        navigate('/login');
+        
+      } catch (err: any) { // (Pake 'any' biar gak error TS)
+        setErrors({ password: err.message || 'Gagal mendaftar. Silakan coba lagi.' });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const isFormValid = formData.fullName && formData.school && formData.email && 
-                      formData.password && formData.agreeTerms;
+  const isFormValid = formData.fullName && formData.school && 
+                      formData.email && formData.password && 
+                      validateEmail(formData.email) && 
+                      formData.agreeTerms;
 
   return (
     <div className="flex min-h-screen w-screen bg-white overflow-hidden">
-      {/* Left Sidebar - Red Background with gradient */}
+      {/* Left Sidebar - Red Background with Cloud Character */}
       <div className="hidden lg:flex lg:w-[576px] lg:flex-shrink-0 flex-col items-center justify-center bg-gradient-to-br from-[#E82D2F] to-[#C21315] shadow-[inset_0_8px_16px_rgba(255,255,255,0.16),inset_0_2px_rgba(255,255,255,0.1)] relative">
-        <img src={sidebarLogo} alt="logo" className="w-[357px] h-[357px]" />
+        <img 
+          src={sidebarLogo} 
+          alt="CloudsUp Logo" 
+          className="w-[357px] h-[357px] animate-fadeIn"
+        />
       </div>
 
-       {/* Right Panel - Registration Form */}
-       <div className="flex-1 flex items-center justify-center px-[48px] min-w-0">
-         <div className="w-full space-y-8">
+      {/* Right Panel - Registration Form */}
+      <div className="flex-1 flex items-center justify-center px-[48px] min-w-0">
+        <div className="w-full space-y-8">
           {/* Logo */}
           <div className="flex items-center justify-start gap-1">
-          <img src={logo} alt="logo" className="w-[287px]" />
+            <img src={logo} alt="CloudsUp" className="w-[287px]" />
           </div>
 
           {/* Title Section */}
@@ -144,9 +234,12 @@ const handleSchoolSelect = (school: SchoolData) => {
               <p className="text-sm font-medium text-[#262626]">
                 Sudah memiliki akun?
               </p>
-                <a href="/login" className="text-sm font-bold text-[#0066ff] hover:underline transition-all background-transparent border-none cursor-pointer">
-                  Masuk disini
-                </a>
+              <a 
+                href="/login" 
+                className="text-sm font-bold text-[#0066ff] hover:underline transition-all"
+              >
+                Masuk disini
+              </a>
             </div>
           </div>
 
@@ -156,34 +249,53 @@ const handleSchoolSelect = (school: SchoolData) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Full Name */}
               <div className="space-y-2">
-                <label className="text-sm font-bold text-[#262626]">
-                  Nama Lengkap<span className="text-[#e82d2f] ml-0.5">*</span>
+                <label className="text-sm font-bold text-gray-900">
+                  Nama Lengkap<span className="text-red-600 ml-0.5">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  placeholder="Masukkan nama lengkap"
-                  className={`w-full h-14 px-5 py-4 rounded-lg border font-medium text-base text-[#262626] outline-none transition-all duration-300 placeholder:text-[#bfbfbf] ${
-                    errors.fullName 
-                      ? 'border-[#e82d2f] focus:border-[#e82d2f]' 
-                      : 'border-[#bfbfbf] border-solid focus:bg-blue-50 focus:border-[2px] focus:border-[#0066ff] focus:shadow-[0_0_0_3px_rgba(0,102,255,0.1)]'
-                  }`}
-                />
-                {errors.fullName && (
-                  <p className="text-xs text-[#e82d2f] pl-1 animate-fadeIn">
-                    {errors.fullName}
+                <div className="relative w-full h-14">
+                  <input
+                    type="text"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    onFocus={() => setIsFocused(prev => ({ ...prev, fullName: true }))}
+                    onBlur={() => {
+                      setIsFocused(prev => ({ ...prev, fullName: false }));
+                      setIsTouched(prev => ({ ...prev, fullName: true }));
+                    }}
+                    placeholder="Masukkan nama lengkap"
+                    className={`w-full h-full px-5 py-4 rounded-lg border font-medium text-base text-gray-900 outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                      errors.fullName || getFullNameError()
+                        ? 'bg-red-50 border-red-600 border-2 placeholder:text-red-600 placeholder:opacity-100' 
+                        : isFocused.fullName 
+                          ? 'bg-blue-50 border-blue-600 border-2 shadow-[inset_0_0_0_1px_#0066FF] placeholder:text-gray-400' 
+                          : 'bg-white border-gray-300 placeholder:text-gray-400'
+                    }`}
+                    style={{
+                      fontSize: '16px',
+                      lineHeight: '1.5em',
+                    }}
+                  />
+                </div>
+                {(errors.fullName || getFullNameError()) && (
+                  <p className="text-xs text-red-600 pl-1 opacity-100 max-h-[30px] mt-2 transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                     style={{
+                       fontFamily: 'Raleway, sans-serif',
+                       fontWeight: 'normal',
+                       letterSpacing: '0.4px',
+                       lineHeight: '16px',
+                     }}>
+                    {errors.fullName || getFullNameError()}
                   </p>
                 )}
               </div>
 
               {/* School Dropdown */}
               <div className="space-y-2 relative">
-                <label className="text-sm font-bold text-[#262626]">
-                  Asal Sekolah<span className="text-[#e82d2f] ml-0.5">*</span>
+                <label className="text-sm font-bold text-gray-900">
+                  Asal Sekolah<span className="text-red-600 ml-0.5">*</span>
                 </label>
-                <div className="relative">
+                <div className="relative w-full h-14">
                   <input
                     type="text"
                     name="school"
@@ -192,28 +304,41 @@ const handleSchoolSelect = (school: SchoolData) => {
                       setSchoolSearch(e.target.value);
                       setSchoolDropdownOpen(true);
                     }}
-                    onFocus={() => setSchoolDropdownOpen(true)}
-                    placeholder={isLoadingSchools ? "Memuat data..." : "Pilih atau ketik asal sekolah"}
-                    className={`w-full h-14 px-5 py-4 pr-12 rounded-lg border font-medium text-base text-[#262626] outline-none transition-all duration-300 placeholder:text-[#bfbfbf] cursor-pointer ${
-                      errors.school 
-                        ? 'border-[#e82d2f] focus:border-[#e82d2f]' 
-                        : 'border-[#bfbfbf] border-solid focus:bg-blue-50 focus:border-[2px] focus:border-[#0066ff] focus:shadow-[0_0_0_3px_rgba(0,102,255,0.1)]'
+                    onFocus={() => {
+                      setSchoolDropdownOpen(true);
+                      setIsFocused(prev => ({ ...prev, school: true }));
+                    }}
+                    onBlur={() => {
+                      setIsFocused(prev => ({ ...prev, school: false }));
+                      setIsTouched(prev => ({ ...prev, school: true }));
+                    }}
+                    placeholder= {isSchoolsLoading ? "Memuat data..." : "Pilih atau ketik asal sekolah"}
+                    className={`w-full h-full px-5 py-4 pr-12 rounded-lg border font-medium text-base text-gray-900 outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] cursor-pointer ${
+                      errors.school || getSchoolError()
+                        ? 'bg-red-50 border-red-600 border-2 placeholder:text-red-600 placeholder:opacity-100' 
+                        : isFocused.school 
+                          ? 'bg-blue-50 border-blue-600 border-2 shadow-[inset_0_0_0_1px_#0066FF] placeholder:text-gray-400' 
+                          : 'bg-white border-gray-300 placeholder:text-gray-400'
                     }`}
+                    style={{
+                      fontSize: '16px',
+                      lineHeight: '1.5em',
+                    }}
                   />
                   <ChevronDown 
-                    className={`absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#bfbfbf] pointer-events-none transition-transform duration-300 ${
+                    className={`absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none transition-transform duration-[400ms] ${
                       schoolDropdownOpen ? 'rotate-180' : ''
                     }`}
                   />
                   
                   {/* Dropdown Menu */}
                   {schoolDropdownOpen && filteredSchools.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#bfbfbf] rounded-lg shadow-lg max-h-[200px] overflow-y-auto z-10">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-[200px] overflow-y-auto z-10">
                       {filteredSchools.map((school, index) => (
                         <div
                           key={index}
                           onClick={() => handleSchoolSelect(school)}
-                          className="px-5 py-3 font-medium text-base text-[#262626] cursor-pointer transition-colors hover:bg-[#0066ff] hover:text-white"
+                          className="px-5 py-3 font-medium text-base text-gray-900 cursor-pointer transition-colors hover:bg-blue-600 hover:text-white"
                         >
                           {school.nama}
                         </div>
@@ -221,9 +346,15 @@ const handleSchoolSelect = (school: SchoolData) => {
                     </div>
                   )}
                 </div>
-                {errors.school && (
-                  <p className="text-xs text-[#e82d2f] pl-1 animate-fadeIn">
-                    {errors.school}
+                {(errors.school || getSchoolError()) && (
+                  <p className="text-xs text-red-600 pl-1 opacity-100 max-h-[30px] mt-2 transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                     style={{
+                       fontFamily: 'Raleway, sans-serif',
+                       fontWeight: 'normal',
+                       letterSpacing: '0.4px',
+                       lineHeight: '16px',
+                     }}>
+                    {errors.school || getSchoolError()}
                   </p>
                 )}
               </div>
@@ -233,50 +364,86 @@ const handleSchoolSelect = (school: SchoolData) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Email */}
               <div className="space-y-2">
-                <label className="text-sm font-bold text-[#262626]">
-                  Email<span className="text-[#e82d2f] ml-0.5">*</span>
+                <label className="text-sm font-bold text-gray-900">
+                  Email<span className="text-red-600 ml-0.5">*</span>
                 </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Masukkan alamat email"
-                  className={`w-full h-14 px-5 py-4 rounded-lg border font-medium text-base text-[#262626] outline-none transition-all duration-300 placeholder:text-[#bfbfbf] ${
-                    errors.email 
-                      ? 'border-[#e82d2f] focus:border-[#e82d2f]' 
-                      : 'border-[#bfbfbf] border-solid focus:bg-blue-50 focus:border-[2px] focus:border-[#0066ff] focus:shadow-[0_0_0_3px_rgba(0,102,255,0.1)]'
-                  }`}
-                />
-                {errors.email && (
-                  <p className="text-xs text-[#e82d2f] pl-1 animate-fadeIn">
-                    {errors.email}
+                <div className="relative w-full h-14">
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    onFocus={() => setIsFocused(prev => ({ ...prev, email: true }))}
+                    onBlur={() => {
+                      setIsFocused(prev => ({ ...prev, email: false }));
+                      setIsTouched(prev => ({ ...prev, email: true }));
+                    }}
+                    placeholder="Masukkan alamat email"
+                    className={`w-full h-full px-5 py-4 rounded-lg border font-medium text-base text-gray-900 outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                      errors.email || getEmailError()
+                        ? 'bg-red-50 border-red-600 border-2 placeholder:text-red-600 placeholder:opacity-100' 
+                        : isFocused.email 
+                          ? 'bg-blue-50 border-blue-600 border-2 shadow-[inset_0_0_0_1px_#0066FF] placeholder:text-gray-400' 
+                          : 'bg-white border-gray-300 placeholder:text-gray-400'
+                    }`}
+                    style={{
+                      fontSize: '16px',
+                      lineHeight: '1.5em',
+                    }}
+                  />
+                </div>
+                {(errors.email || getEmailError()) && (
+                  <p className="text-xs text-red-600 pl-1 opacity-100 max-h-[30px] mt-2 transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                     style={{
+                       fontFamily: 'Raleway, sans-serif',
+                       fontWeight: 'normal',
+                       letterSpacing: '0.4px',
+                       lineHeight: '16px',
+                     }}>
+                    {errors.email || getEmailError()}
                   </p>
                 )}
               </div>
 
               {/* Password */}
               <div className="space-y-2">
-                <label className="text-sm font-bold text-[#262626]">
-                  Kata sandi<span className="text-[#e82d2f] ml-0.5">*</span>
+                <label className="text-sm font-bold text-gray-900">
+                  Kata sandi<span className="text-red-600 ml-0.5">*</span>
                 </label>
-                <div className="relative">
+                <div className="relative w-full h-14">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
+                    onFocus={() => setIsFocused(prev => ({ ...prev, password: true }))}
+                    onBlur={() => {
+                      setIsFocused(prev => ({ ...prev, password: false }));
+                      setIsTouched(prev => ({ ...prev, password: true }));
+                    }}
                     placeholder="Masukkan kata sandi"
-                    className={`w-full h-14 px-5 py-4 pr-12 rounded-lg border font-medium text-base text-[#262626] outline-none transition-all duration-300 placeholder:text-[#bfbfbf] ${
-                      errors.password 
-                        ? 'border-[#e82d2f] focus:border-[#e82d2f]' 
-                        : 'border-[#bfbfbf] border-solid focus:bg-blue-50 focus:border-[2px] focus:border-[#0066ff] focus:shadow-[0_0_0_3px_rgba(0,102,255,0.1)]'
+                    className={`w-full h-full px-5 py-4 pr-12 rounded-lg border font-medium text-base text-gray-900 outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                      errors.password || getPasswordError()
+                        ? 'bg-red-50 border-red-600 border-2 placeholder:text-red-600 placeholder:opacity-100' 
+                        : isFocused.password 
+                          ? 'bg-blue-50 border-blue-600 border-2 shadow-[inset_0_0_0_1px_#0066FF] placeholder:text-gray-400' 
+                          : 'bg-white border-gray-300 placeholder:text-gray-400'
                     }`}
+                    style={{
+                      fontSize: '16px',
+                      lineHeight: '1.5em',
+                    }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-5 top-1/2 -translate-y-1/2 text-[#bfbfbf] hover:text-[#262626] transition-colors cursor-pointer background-transparent border-none focus:outline-none"
+                    className={`absolute right-5 top-1/2 -translate-y-1/2 transition-colors duration-[400ms] ${
+                      errors.password || getPasswordError()
+                        ? 'text-red-600' 
+                        : isFocused.password 
+                          ? 'text-blue-600' 
+                          : 'text-gray-400'
+                    }`}
                   >
                     {showPassword ? (
                       <EyeOff className="w-5 h-5" />
@@ -285,9 +452,15 @@ const handleSchoolSelect = (school: SchoolData) => {
                     )}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="text-xs text-[#e82d2f] pl-1 animate-fadeIn">
-                    {errors.password}
+                {(errors.password || getPasswordError()) && (
+                  <p className="text-xs text-red-600 pl-1 opacity-100 max-h-[30px] mt-2 transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                     style={{
+                       fontFamily: 'Raleway, sans-serif',
+                       fontWeight: 'normal',
+                       letterSpacing: '0.4px',
+                       lineHeight: '16px',
+                     }}>
+                    {errors.password || getPasswordError()}
                   </p>
                 )}
               </div>
@@ -304,10 +477,12 @@ const handleSchoolSelect = (school: SchoolData) => {
                     onChange={handleInputChange}
                     className="sr-only"
                   />
-                  <div className={`w-5 h-5 rounded border-[1.5px] flex items-center justify-center transition-all duration-300 ${
+                  <div className={`w-5 h-5 rounded border-[1.5px] flex items-center justify-center transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
                     formData.agreeTerms 
-                      ? 'bg-[#0066ff] border-[#0066ff]' 
-                      : 'bg-white border-[#bfbfbf]'
+                      ? 'bg-blue-600 border-blue-600' 
+                      : errors.agreeTerms
+                        ? 'bg-white border-red-600'
+                        : 'bg-white border-gray-400'
                   }`}>
                     {formData.agreeTerms && (
                       <svg 
@@ -322,20 +497,26 @@ const handleSchoolSelect = (school: SchoolData) => {
                     )}
                   </div>
                 </div>
-                <span className="text-sm text-[#262626] leading-[1.4em]">
+                <span className="text-sm text-gray-900 leading-[1.4em]">
                   Dengan mendaftar, saya menyetujui{' '}
-                  <a href="#" className="font-bold text-[#0066ff] hover:underline">
+                  <a href="#" className="font-bold text-blue-600 hover:underline">
                     Kebijakan Privasi
                   </a>{' '}
                   serta{' '}
-                  <a href="#" className="font-bold text-[#0066ff] hover:underline">
+                  <a href="#" className="font-bold text-blue-600 hover:underline">
                     Syarat & Ketentuan
                   </a>{' '}
                   CloudsUp.
                 </span>
               </label>
               {errors.agreeTerms && (
-                <p className="text-xs text-[#e82d2f] pl-8 animate-fadeIn">
+                <p className="text-xs text-red-600 pl-8 opacity-100 max-h-[30px] mt-2 transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                   style={{
+                     fontFamily: 'Raleway, sans-serif',
+                     fontWeight: 'normal',
+                     letterSpacing: '0.4px',
+                     lineHeight: '16px',
+                   }}>
                   {errors.agreeTerms}
                 </p>
               )}
@@ -344,14 +525,22 @@ const handleSchoolSelect = (school: SchoolData) => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={!isFormValid}
-              className={`w-full h-14 px-6 py-4 rounded-lg font-bold text-base leading-[1.5em] transition-all duration-300 ${
-                isFormValid
-                  ? 'bg-[#0066ff] text-white hover:bg-[#0052cc] hover:scale-[1.02] focus:shadow-[0_0_0_3px_rgba(0,102,255,0.3)] cursor-pointer'
-                  : 'bg-[#bfbfbf] text-white cursor-not-allowed'
+              disabled={!isFormValid || isLoading}
+              className={`w-full h-14 px-6 py-4 rounded-lg font-bold text-base leading-[1.5em] outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                isFormValid && !isLoading
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-200 cursor-pointer'
+                  : 'bg-gray-400 text-white cursor-not-allowed'
               }`}
             >
-              Daftar
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-1">
+                  <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '-0.32s', animationDuration: '1.4s' }} />
+                  <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '-0.16s', animationDuration: '1.4s' }} />
+                  <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDuration: '1.4s' }} />
+                </div>
+              ) : (
+                'Daftar'
+              )}
             </button>
           </form>
         </div>
@@ -368,4 +557,5 @@ const handleSchoolSelect = (school: SchoolData) => {
   );
 };
 
-export default Home;
+export default RegisterPage;
+
