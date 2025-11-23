@@ -4,7 +4,12 @@ import ReactionIcon from "../../../../assets/images/report/reaction-time.svg";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-const ReactionTimeDetailCard: React.FC = () => {
+interface ReactionTimeDetailCardProps {
+  ReactionTimePoint: number;
+}
+
+const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ ReactionTimePoint }) => {
+  const score = ReactionTimePoint/1000;
   const [activeWeek, setActiveWeek] = useState<"week31" | "week32">("week31");
   const games = [
     {
@@ -246,7 +251,7 @@ const ReactionTimeDetailCard: React.FC = () => {
                 {/* Percentage Display */}
                 <div className=" flex items-end">
                   <p className="font-raleway font-bold text-[30px]  text-white">
-                    5.2 s
+                    {score} s
                   </p>
                 </div>
               </div>
