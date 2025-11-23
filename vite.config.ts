@@ -5,10 +5,19 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    // --- TAMBAHAN PENTING (OBAT ERROR TADI) ---
+    // Izinkan domain abang diakses
+    allowedHosts: [
+      'dashboard.cloudsup.id',
+      'www.dashboard.cloudsup.id'
+    ],
+    host: true, // Ini biar dia listen ke 0.0.0.0 (IP publik)
+    // ------------------------------------------
+
     // Setting Proxy biar dianggap satu domain
     proxy: {
       '/v1': {
-        target: 'http://127.0.0.1:5000', // Alamat Backend Flask Abang
+        target: 'https://cloudsup.id:5000', // Alamat Backend Flask Abang
         changeOrigin: true,
         secure: false,
       }
