@@ -1,15 +1,48 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+import { LucideInfo } from "lucide-react";
+import CoordinationIcon from "../../../../assets/images/report/coordination.svg";
 
-interface CoordinationDetailCardProps {
-  coordinatePoint: number;
+interface GameSkillDetail {
+  fokus: number;
+  koordinasi: number;
+  keseimbangan: number;
+  ketangkasan: number;
+  memori: number;
+  waktu_reaksi: number;
 }
 
-const CoordinationDetailCard: React.FC<CoordinationDetailCardProps> = ({ coordinatePoint }) => {
+interface AnalyticsStats {
+  scores: { koordinasi: number }; // Kita butuh Koordinasi di sini
+  game_skills?: Record<string, GameSkillDetail>;
+}
 
-  const [activeWeek, setActiveWeek] = useState<'week31' | 'week32'>('week31');
-  const games = [
+interface ReportData {
+  overall: AnalyticsStats;
+  week1: AnalyticsStats;
+  week2: AnalyticsStats;
+  week3: AnalyticsStats;
+  week4: AnalyticsStats;
+}
+
+interface CoordinationDetailCardProps {
+  data?: ReportData | null; // Terima Full Data
+}
+
+const CoordinationDetailCard: React.FC<CoordinationDetailCardProps> = ({ data }) => {
+const [activeWeek, setActiveWeek] = useState<"week1" | "week2" | "week3" | "week4">("week1");
+
+useEffect(() => {
+    if (data) {
+        if (data.week4.scores.koordinasi > 0) setActiveWeek("week4");
+        else if (data.week3.scores.koordinasi > 0) setActiveWeek("week3");
+        else if (data.week2.scores.koordinasi > 0) setActiveWeek("week2");
+        else setActiveWeek("week1");
+    }
+  }, [data]);
+
+const gamesConfig = [
     {
       name: "GELEMBUNG AJAIB",
       icon: "https://framerusercontent.com/images/5I3P3XAnbMenWJjscRxX24z5M.png?width=538&height=506",
@@ -28,29 +61,30 @@ const CoordinationDetailCard: React.FC<CoordinationDetailCardProps> = ({ coordin
     },
   ];
 
-  // Data untuk vertical bar chart (Minggu 31 & 32)
-  const weekComparisonData = {
-    week31: 70.7,
-    week32: 79.4,
-  };
+  const verticalChartData = useMemo(() => {
+    return [
+      { name: "Minggu 1", y: data?.week1?.scores?.koordinasi || 0 },
+      { name: "Minggu 2", y: data?.week2?.scores?.koordinasi || 0 },
+      { name: "Minggu 3", y: data?.week3?.scores?.koordinasi || 0 },
+      { name: "Minggu 4", y: data?.week4?.scores?.koordinasi || 0 },
+    ];
+  }, [data]);
 
-  // Data untuk horizontal bar chart berdasarkan minggu
-  const gameProgressData = {
-    week31: {
-      "GELEMBUNG AJAIB": 75,
-      "PAPAN SEIMBANG": 45,
-      "TANGKAP RASA": 80,
-      "KARTU COCOK": 95,
-    },
-    week32: {
-      "GELEMBUNG AJAIB": 85,
-      "PAPAN SEIMBANG": 50,
-      "TANGKAP RASA": 85,
-      "KARTU COCOK": 100,
-    },
-  };
+  const horizontalChartData = useMemo(() => {
+    const currentWeekSkills = data?.[activeWeek]?.game_skills || {};
 
-  // Konfigurasi Vertical Bar Chart (Minggu 31 & 32)
+    return gamesConfig.map((game) => {
+      const detail = currentWeekSkills[game.name];
+      // Ambil KOORDINASI saja
+      const score = detail ? detail.koordinasi : 0;
+
+      return {
+        y: score,
+        color: "rgb(210, 33, 21)", // Warna Merah Koordinasi
+      };
+    });
+  }, [data, activeWeek]);
+
   const verticalChartOptions = useMemo(
     () => ({
       chart: {
@@ -122,10 +156,7 @@ const CoordinationDetailCard: React.FC<CoordinationDetailCardProps> = ({ coordin
       series: [
         {
           name: "Progress",
-          data: [
-            { y: weekComparisonData.week31, color: "rgb(210, 33, 21)" },
-            { y: weekComparisonData.week32, color: "rgb(210, 33, 21)" },
-          ],
+          data: verticalChartData,
           pointPadding: 0.2,
           groupPadding: 0.3,
         },
@@ -174,7 +205,7 @@ const CoordinationDetailCard: React.FC<CoordinationDetailCardProps> = ({ coordin
         gridLineWidth: 1,
       },
       xAxis: {
-        categories: games.map((g) => g.name),
+        categories: gamesConfig.map((g) => g.name),
         labels: {
           enabled: false,
         },
@@ -198,12 +229,7 @@ const CoordinationDetailCard: React.FC<CoordinationDetailCardProps> = ({ coordin
       series: [
         {
           name: "Progress",
-          data: games.map((game) => ({
-            y: gameProgressData[activeWeek][
-              game.name as keyof typeof gameProgressData.week31
-            ],
-            color: "rgb(210, 33, 21)",
-          })),
+          data: horizontalChartData,
           pointPadding: 0.1,
           groupPadding: 0.1,
         },
@@ -215,95 +241,85 @@ const CoordinationDetailCard: React.FC<CoordinationDetailCardProps> = ({ coordin
         enabled: false,
       },
     }),
-    [activeWeek, games]
+    [activeWeek, gamesConfig]
   );
 
   return (
     <div className="bg-white rounded-lg p-6">
       {/* Top Section - Background Image with Content */}
-      <div className="relative w-full h-[246px] rounded-lg overflow-hidden mb-6">
-        {/* Background Image */}
-        <img 
-          src="https://framerusercontent.com/images/yqBjNPvUS03ZXIlGOkjaQ2Kk.png?width=3648&height=984"
-          alt="Coordination background"
-          className="w-full h-full object-cover object-center"
-          style={{ objectFit: 'fill' }}
-        />
-        
-        {/* Content Overlay */}
-        <div className="absolute inset-0 flex flex-col justify-between p-6">
-          {/* Top Content */}
-          <div className="flex items-start gap-3">
-            <div>
-              <h2 className="font-raleway font-bold text-[25px] leading-[25px] text-white">
-                Koordinasi
-              </h2>
-              <h2 className="font-raleway font-bold text-[25px] leading-[25px] text-white">
-                Tangan & Mata
-              </h2>
-            </div>
-            {/* Info Icon SVG */}
-            <div 
-              className="w-[22px] h-[25px] flex-shrink-0"
-              style={{
-                imageRendering: 'pixelated',
-                flexShrink: 0,
-                fill: 'rgb(0, 0, 0)',
-                color: 'rgb(0, 0, 0)'
-              }}
-            >
-              <div className="w-full h-full" style={{ aspectRatio: 'inherit' }}>
-                <svg style={{ width: '100%', height: '100%' }} viewBox="0 0 22 25" preserveAspectRatio="none">
-                  {/* Info Icon SVG */}
-                </svg>
+      <div className="bg-gradient-to-tr from-[#E82D2F] to-[#ff5052] rounded-lg p-6 mt-8 h-[221px]">
+        {/* Left Column - Text & Progress */}
+        <div className="flex gap-6 mb-6 ">
+          {/* Right Column - Chart SVG */}
+          <div className=" flex-shrink-0">
+            <div data-framer-component-type="SVG" className="w-full h-full">
+              <div
+                className="w-full h-full flex items-center"
+                style={{ aspectRatio: "inherit" }}
+              >
+                <img src={CoordinationIcon} alt="" />
               </div>
             </div>
           </div>
+          <div className="flex-1">
+            {/* Title */}
+            <div className="flex flex-col justi">
+              <div className="flex gap-3 items-center justify-start">
+                <h2 className="font-raleway font-bold text-[25px] leading-[25px] text-white col-span-2">
+                  Koordinasi Tangan & Mata
+                </h2>
+                <div className="flex items-center">
+                  <LucideInfo className="text-white"></LucideInfo>
+                </div>
+                {/* Percentage Display */}
+                <div className=" flex items-end">
+                  <p className="font-raleway font-bold text-[30px]  text-white">
+                    5.2 %
+                  </p>
+                </div>
+              </div>
 
-          {/* Percentage Display */}
-          <div className="mb-4">
-            <p className="font-raleway font-bold text-[30px] leading-[40px] text-white">
-              {coordinatePoint} Points
-            </p>
-          </div>
+              <div className="">
+                {/* Labels under progress bar */}
+                <div className="flex justify-between mt-[18px] mb-2">
+                  <p className="font-raleway font-semibold text-[10px] leading-[10px] text-white">
+                    0
+                  </p>
+                  <p className="font-raleway font-semibold text-[10px] leading-[10px] text-white">
+                    100
+                  </p>
+                </div>
 
-          {/* Progress Bar */}
-          <div className="flex items-center gap-2">
-            <p className="font-raleway font-semibold text-[10px] leading-[10px] text-white">0</p>
-            <div className="flex-1 relative">
-              <div className="h-2 bg-white/30 rounded-full">
-                <div 
-                  className="absolute left-0 top-0 h-full bg-white rounded-full"
-                  style={{ width: '55.4%' }}
-                >
-                  {/* Marker */}
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 flex items-center gap-1">
-                    <div className="w-px h-3 bg-white" />
-                    <p className="font-raleway font-semibold text-[10px] leading-[10px] text-white whitespace-nowrap">
-                      55.4
-                    </p>
+                {/* Progress Bar */}
+                <div className="">
+                  {/* Progress Bar Container */}
+                  <div className="h-[9px] bg-white relative">
+                    {/* Progress Fill */}
+                    <div
+                      className="absolute top-0 left-0 h-[9px] bg-[#084EC5]"
+                      style={{ width: "81.1%" }}
+                    >
+                      {/* Marker at 81.1 */}
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2">
+                        <div className="flex flex-col items-center">
+                          <p className="font-raleway font-semibold text-[10px] leading-[10px] text-white bg-transparent mt-7 whitespace-nowrap">
+                            81.1
+                          </p>
+                          <div className="w-px bg-[#0D469B] mt-1" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            <p className="font-raleway font-semibold text-[10px] leading-[10px] text-white">100</p>
-          </div>
-
-          {/* Description */}
-          <div className="mt-4">
-            <p className="font-raleway font-semibold text-[15px] leading-[18px] text-white">
-              Kemampuan tubuh untuk mengintegrasikan informasi visual secara mulus dengan gerakan tangan, memungkinkan tindakan yang presisi dan terkoordinasi dalam permainan.
-            </p>
-          </div>
-        </div>
-
-        {/* Chart SVG Overlay */}
-        <div className="absolute top-4 right-4 w-[433px] h-[196px] opacity-80">
-          <div data-framer-component-type="SVG" className="w-full h-full">
-            <div className="w-full h-full" style={{ aspectRatio: 'inherit' }}>
-              <svg style={{ width: '100%', height: '100%' }} viewBox="0 0 433 196" preserveAspectRatio="none">
-                {/* Chart SVG will be rendered here */}
-              </svg>
+            {/* Description */}
+            <div className="mt-6">
+              <p className="font-raleway font-semibold text-[15px] leading-[18px] text-white">
+                Kemampuan tubuh untuk mengintegrasikan informasi visual secara
+                mulus dengan gerakan tangan, memungkinkan tindakan yang presisi
+                dan terkoordinasi dalam permainan.
+              </p>
             </div>
           </div>
         </div>
@@ -324,33 +340,19 @@ const CoordinationDetailCard: React.FC<CoordinationDetailCardProps> = ({ coordin
           <div className="flex-1 flex flex-col">
             {/* Week Tabs */}
             <div className="flex gap-2 mb-4 border-[#dedede] border-b-2">
-              <button
-                onClick={() => setActiveWeek("week31")}
-                className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
-                  activeWeek === "week31"
-                    ? "text-[#C21315] border-b-2 border-b-[#C21315]"
-                    : "text-[#C21315] hover:bg-blue-50"
-                }`}
-                style={{
-                  borderBottomWidth: activeWeek === "week31" ? "2px" : "0",
-                }}
-              >
-                Minggu 31
-              </button>
-              <button
-                onClick={() => setActiveWeek("week32")}
-                className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
-                  activeWeek === "week32"
-                    ? "text-[#C21315] border-b-2 border-b-[#C21315]"
-                    : "text-[#C21315] hover:bg-blue-50"
-                }`}
-                style={{
-                  borderBottomWidth: activeWeek === "week32" ? "2px" : "0",
-                }}
-              >
-                Minggu 32
-              </button>
-              
+              {["week1", "week2", "week3", "week4"].map((week) => (
+                <button
+                    key={week}
+                    onClick={() => setActiveWeek(week as any)}
+                    className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] border-b-2 transition-colors ${
+                    activeWeek === week 
+                        ? "text-[#C21315] border-b-2 border-b-[#C21315]" 
+                        : "text-[#C21315] border-transparent hover:bg-red-50"
+                    }`}
+                >
+                    {week.replace("week", "Minggu ")}
+                </button>
+                ))}
             </div>
 
             {/* Date Display */}
@@ -359,10 +361,10 @@ const CoordinationDetailCard: React.FC<CoordinationDetailCardProps> = ({ coordin
                 4 Agustus 2025 - 10 Agustus 2025
               </p>
             </div>
-            <div className= "flex flex-row">
+            <div className="flex flex-row">
               {/* Game Icons */}
               <div className="flex flex-col justify-between items-center mt-4 bg-transparent p-4 rounded-lg">
-                {games.map((game, index) => (
+                {gamesConfig.map((game, index) => (
                   <div key={index} className="flex flex-row items-center gap-2">
                     <div className="w-9 h-9 rounded overflow-hidden">
                       <img
@@ -399,8 +401,6 @@ const CoordinationDetailCard: React.FC<CoordinationDetailCardProps> = ({ coordin
                   options={horizontalChartOptions}
                 />
               </div>
-
-              
             </div>
           </div>
         </div>

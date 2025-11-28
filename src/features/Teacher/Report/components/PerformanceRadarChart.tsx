@@ -1,10 +1,53 @@
 import React from "react";
-import { useSelectedPlayer } from "../contexts/SelectedPlayerContext";
 
-const PerformanceRadarChart: React.FC = () => {
-  const { currentPlayer } = useSelectedPlayer();
+// Definisi Tipe Props (Biar nerima data dari luar)
+interface AnalyticsStats {
+  fokus: number;
+  koordinasi: number;
+  waktu_reaksi: number;
+  keseimbangan: number;
+  ketangkasan: number;
+  memori: number;
+}
+
+interface PerformanceRadarChartProps {
+  stats?: AnalyticsStats | null; // Data bisa null saat loading
+}
+
+const PerformanceRadarChart: React.FC<PerformanceRadarChartProps> = ({ stats }) => {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const chartRef = React.useRef<any>(null);
+
+  // 1. Persiapkan Data (Logic Konversi)
+  const chartDataValues = React.useMemo(() => {
+    if (!stats) return [0, 0, 0, 0, 0, 0, 0]; // Default 0 semua
+
+    // a. Konversi Waktu Reaksi (ms) ke Skor (0-100)
+    // 0ms = 100, 10000ms = 0
+    const rawReaction = stats.waktu_reaksi || 0;
+    const reactionScore = Math.max(0, Math.min(100, ((10000 - rawReaction) / 10000) * 100));
+
+    // b. Ambil skill lain (udah 0-100)
+    const { ketangkasan, fokus, koordinasi, keseimbangan, memori } = stats;
+
+    // c. Hitung "Keseluruhan" (Rata-rata dari 6 skill)
+    // Total 6 skill: Ketangkasan, Fokus, Koordinasi, Keseimbangan, Memori, Waktu Reaksi(Score)
+    const totalScore = ketangkasan + fokus + koordinasi + keseimbangan + memori + reactionScore;
+    const overallScore = Math.round(totalScore / 6);
+
+    // d. Return Array sesuai urutan Label
+    // Urutan: [Keseluruhan, Ketangkasan, Fokus, Koordinasi, Keseimbangan, Memori, Waktu Reaksi]
+    return [
+      overallScore, 
+      Math.round(ketangkasan), 
+      Math.round(fokus), 
+      Math.round(koordinasi), 
+      Math.round(keseimbangan), 
+      Math.round(memori), 
+      Math.round(reactionScore)
+    ];
+  }, [stats]);
+
 
   React.useEffect(() => {
     let mounted = true;
@@ -28,9 +71,7 @@ const PerformanceRadarChart: React.FC = () => {
         const ctx = canvasRef.current.getContext("2d");
         if (!ctx) return;
 
-        const data = [85, 70, 100, 75, 80, 65];
-
-        // Custom plugin untuk spider web effect menggunakan koordinat skala radial
+        // Custom plugin untuk spider web effect
         const spiderWebPlugin = {
           id: 'spiderWeb',
           beforeDraw(chart: any) {
@@ -39,13 +80,13 @@ const PerformanceRadarChart: React.FC = () => {
 
             const centerX = r.xCenter;
             const centerY = r.yCenter;
-            const axes = chart.data.labels?.length || 6;
+            const axes = chart.data.labels?.length || 7; // Update jadi 7 sumbu
 
             ctx.save();
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 0.8;
 
-            // Radial lines (pusat ke titik lingkar luar)
+            // Radial lines
             for (let i = 0; i < axes; i++) {
               const outer = (r as any).getPointPositionForValue(i, r.max);
               ctx.beginPath();
@@ -54,7 +95,7 @@ const PerformanceRadarChart: React.FC = () => {
               ctx.stroke();
             }
 
-            // Polygon konsentris (3 level sama jarak)
+            // Polygon konsentris
             const levels = 3;
             const step = (r.max - r.min) / levels;
             for (let level = 1; level <= levels; level++) {
@@ -68,15 +109,20 @@ const PerformanceRadarChart: React.FC = () => {
               ctx.closePath();
               ctx.stroke();
             }
-
             ctx.restore();
           }
         };
+
+        // Hancurkan chart lama jika ada biar gak numpuk
+        if (chartRef.current) {
+            chartRef.current.destroy();
+        }
 
         chartRef.current = new Chart(ctx, {
           type: "radar",
           plugins: [spiderWebPlugin],
           data: {
+            // Label Wajib Sama Urutannya dengan `chartDataValues`
             labels: [
               "Keseluruhan",
               "Ketangkasan",
@@ -84,11 +130,12 @@ const PerformanceRadarChart: React.FC = () => {
               "Koordinasi",
               "Keseimbangan",
               "Memori",
+              "Waktu Reaksi", // <-- Tambahan Baru
             ],
             datasets: [
               {
                 label: "Performa",
-                data: data,
+                data: chartDataValues, // Gunakan Data Dinamis
                 backgroundColor: "rgba(8, 78, 197, 0.1)",
                 borderColor: "rgb(8, 78, 197)",
                 borderWidth: 1.5,
@@ -109,21 +156,14 @@ const PerformanceRadarChart: React.FC = () => {
                 beginAtZero: true,
                 min: 0,
                 max: 100,
-                startAngle: -Math.PI / 2, // label pertama di atas
-                ticks: {
-                  display: false,
-                },
-                angleLines: {
-                  display: false,
-                },
-                grid: {
-                  display: false,
-                },
+                startAngle: -Math.PI / 2,
+                ticks: { display: false },
+                angleLines: { display: false },
+                grid: { display: false },
                 pointLabels: {
-                  // centerPointLabels: true,
                   font: {
                     family: "'Raleway', sans-serif",
-                    size: 14,
+                    size: 11, // Sedikit diperkecil biar muat 7 label
                     weight: "700",
                   },
                   color: "#084ec5",
@@ -150,18 +190,13 @@ const PerformanceRadarChart: React.FC = () => {
           },
         });
 
-        setTimeout(() => {
-          if (chartRef.current) {
-            chartRef.current.resize();
-          }
-        }, 100);
-
       } catch (error) {
         console.error("Error initializing chart:", error);
       }
     };
 
     init();
+
     return () => {
       mounted = false;
       if (chartRef.current) {
@@ -169,29 +204,28 @@ const PerformanceRadarChart: React.FC = () => {
         chartRef.current = null;
       }
     };
-  }, [currentPlayer]);
+  }, [chartDataValues]); // Re-render kalau data berubah
 
   return (
-    <div className="bg-transparent p-3 ml-2">
-      <div className="flex justify-between items-start">
+    <div className="bg-transparent p-3 ml-2 h-full flex flex-col">
+      <div className="flex justify-between items-start mb-2">
         <h2 className="font-raleway font-bold text-lg text-[#084EC5]">
           Performa
         </h2>
-          </div>
+      </div>
 
-      <div className="w-full flex items-center justify-center">
-        <div className="w-full h-[270px]"> 
+      <div className="flex-1 w-full flex items-center justify-center min-h-0">
+        <div className="w-full h-full relative"> 
           <canvas 
             ref={canvasRef} 
             style={{ 
               display: 'block',
-              boxSizing: 'border-box',
               width: '100%',
               height: '100%'
             }}
           />
-          </div>
         </div>
+      </div>
     </div>
   );
 };

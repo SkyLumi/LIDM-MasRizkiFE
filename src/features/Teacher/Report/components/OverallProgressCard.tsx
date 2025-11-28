@@ -2,8 +2,45 @@ import React from "react";
 import { useSelectedPlayer } from "../contexts/SelectedPlayerContext";
 import { Info } from "lucide-react";
 
-const OverallProgressCard: React.FC = () => {
+interface OverallStats {
+  scores: {
+    fokus: number;
+    koordinasi: number;
+    waktu_reaksi: number;
+    keseimbangan: number;
+    ketangkasan: number;
+    memori: number;
+  };
+  meta?: {
+    total_games: number;
+    total_minutes: number;
+  };
+}
+
+interface OverallProgressCardProps {
+  data?: OverallStats | null;
+}
+
+const OverallProgressCard: React.FC<OverallProgressCardProps> = ({ data }) => {
   const { currentPlayer } = useSelectedPlayer();
+
+  const calculateOverallScore = () => {
+    if (!data?.scores) return 0;
+    const { fokus, koordinasi, waktu_reaksi, keseimbangan, ketangkasan, memori } = data.scores;
+    
+    const rawReaction = waktu_reaksi || 0;
+    const reactionScore = Math.max(0, Math.min(100, ((10000 - rawReaction) / 10000) * 100));
+
+    const total = fokus + koordinasi + reactionScore + keseimbangan + ketangkasan + memori;
+    return (total / 6).toFixed(1); // 1 desimal (string)
+  };
+
+  const overallScoreStr = calculateOverallScore() as string;;
+  const overallScoreNum = parseFloat(overallScoreStr);
+
+  const totalGames = data?.meta?.total_games || 0;
+  const totalMinutes = data?.meta?.total_minutes || 0;
+
   return (
     <div className="bg-[#edf8ff] rounded-lg">
       {/* Header */}
@@ -169,13 +206,13 @@ const OverallProgressCard: React.FC = () => {
           {/* Progress Fill */}
           <div
             className="absolute top-0 left-0 h-[9px] bg-[#084EC5]"
-            style={{ width: "81.1%" }}
+            style={{ width: `${overallScoreNum}%` }}
           >
             {/* Marker at 81.1 */}
             <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2">
               <div className="flex flex-col items-center">
                 <p className="font-raleway font-semibold text-[10px] leading-[10px] text-[#0D469B] bg-white mb-4 whitespace-nowrap">
-                  81.1
+                  {overallScoreStr}
                 </p>
                 <div className="w-px bg-[#0D469B] mt-1" />
               </div>
@@ -187,7 +224,7 @@ const OverallProgressCard: React.FC = () => {
       {/* Percentage Display */}
       <div className="mb-6 flex fle-row justify-between">
         <p className="font-raleway font-bold text-[40px] leading-[40px] text-[#084EC5] mb-3">
-          81.1%
+          {overallScoreStr}%
         </p>
         <button className=" w-[84px] h-full py-[10px] p-0 bg-white border border-black rounded-md hover:bg-gray-50 transition-colors">
           <p className=" w-auto font-raleway font-bold text-[12px] leading-[12px] text-[#212529] capitalize">
@@ -215,7 +252,7 @@ const OverallProgressCard: React.FC = () => {
               </p>
             </div>
             <p className="font-raleway font-bold text-[35px] leading-[35px] text-[#084EC5]">
-              16
+              {totalGames}
             </p>
           </div>
         </div>
@@ -238,7 +275,7 @@ const OverallProgressCard: React.FC = () => {
             </div>
             <div className="flex items-baseline gap-1">
               <p className="font-raleway font-bold text-[35px] leading-[35px] text-[#084EC5]">
-                15
+                {totalMinutes}
               </p>
               <p className="font-raleway font-bold text-sm leading-[14px] text-[#084EC5]">
                 mins

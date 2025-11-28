@@ -1,11 +1,44 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { LucideInfo } from "lucide-react";
 import BalanceIcon from "../../../../assets/images/report/keseimbangan.svg";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-const BalanceDetailCard: React.FC = () => {
-  const [activeWeek, setActiveWeek] = useState<"week31" | "week32">("week31");
+// --- INTERFACE DATA (Sama standar card lain) ---
+interface GameSkillDetail {
+  keseimbangan: number; // Kita ambil skill keseimbangan
+}
+
+interface AnalyticsStats {
+  scores: { keseimbangan: number };
+  game_skills?: Record<string, GameSkillDetail>;
+}
+
+interface ReportData {
+  overall: AnalyticsStats;
+  week1: AnalyticsStats;
+  week2: AnalyticsStats;
+  week3: AnalyticsStats;
+  week4: AnalyticsStats;
+}
+
+interface BalanceDetailCardProps {
+  data?: ReportData | null;
+}
+
+const BalanceDetailCard: React.FC<BalanceDetailCardProps> = ({ data }) => {
+  const [activeWeek, setActiveWeek] = useState<"week1" | "week2" | "week3" | "week4">("week1");
+
+  // Auto-Select Minggu (Logic standar biar gak kosong pas dibuka)
+  useEffect(() => {
+    if (data) {
+        if (data.week4.scores.keseimbangan > 0) setActiveWeek("week4");
+        else if (data.week3.scores.keseimbangan > 0) setActiveWeek("week3");
+        else if (data.week2.scores.keseimbangan > 0) setActiveWeek("week2");
+        else setActiveWeek("week1");
+    }
+  }, [data]);
+
   const games = [
     {
       name: "GELEMBUNG AJAIB",
@@ -25,29 +58,30 @@ const BalanceDetailCard: React.FC = () => {
     },
   ];
 
-  // Data untuk vertical bar chart (Minggu 31 & 32)
-  const weekComparisonData = {
-    week31: 70.7,
-    week32: 79.4,
-  };
+  // 1. Data Vertical Chart (Minggu 1-4)
+  const verticalChartData = useMemo(() => {
+    return [
+      { y: data?.week1?.scores?.keseimbangan || 0, color: "rgb(198, 25, 8)" },
+      { y: data?.week2?.scores?.keseimbangan || 0, color: "rgb(198, 25, 8)" },
+      { y: data?.week3?.scores?.keseimbangan || 0, color: "rgb(198, 25, 8)" },
+      { y: data?.week4?.scores?.keseimbangan || 0, color: "rgb(198, 25, 8)" },
+    ];
+  }, [data]);
 
-  // Data untuk horizontal bar chart berdasarkan minggu
-  const gameProgressData = {
-    week31: {
-      "GELEMBUNG AJAIB": 75,
-      "PAPAN SEIMBANG": 45,
-      "TANGKAP RASA": 80,
-      "KARTU COCOK": 95,
-    },
-    week32: {
-      "GELEMBUNG AJAIB": 85,
-      "PAPAN SEIMBANG": 50,
-      "TANGKAP RASA": 85,
-      "KARTU COCOK": 100,
-    },
-  };
+  // 2. Data Horizontal Chart (Per Game)
+  const horizontalChartData = useMemo(() => {
+    const currentSkills = data?.[activeWeek]?.game_skills || {};
+    
+    return games.map((game) => {
+        const val = currentSkills[game.name]?.keseimbangan || 0;
+        return {
+            y: val,
+            color: "rgb(198, 25, 8)" // Warna Merah Bata
+        };
+    });
+  }, [data, activeWeek]);
 
-  // Konfigurasi Vertical Bar Chart (Minggu 31 & 32)
+  // Konfigurasi Vertical Bar Chart
   const verticalChartOptions = useMemo(
     () => ({
       chart: {
@@ -56,14 +90,10 @@ const BalanceDetailCard: React.FC = () => {
         backgroundColor: "transparent",
         spacing: [0, 0, 0, 0],
       },
-      title: {
-        text: null,
-      },
-      credits: {
-        enabled: false,
-      },
+      title: { text: null },
+      credits: { enabled: false },
       xAxis: {
-        categories: ["Minggu 31", "Minggu 32"],
+        categories: ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4"],
         labels: {
           style: {
             fontFamily: "Raleway",
@@ -79,9 +109,7 @@ const BalanceDetailCard: React.FC = () => {
         min: 0,
         max: 100,
         tickPositions: [0, 20, 40, 60, 80, 100],
-        title: {
-          text: null,
-        },
+        title: { text: null },
         labels: {
           style: {
             fontFamily: "Raleway",
@@ -110,34 +138,25 @@ const BalanceDetailCard: React.FC = () => {
             },
           },
           states: {
-            hover: {
-              enabled: false,
-            },
+            hover: { enabled: false },
           },
         },
       },
       series: [
         {
           name: "Progress",
-          data: [
-            { y: weekComparisonData.week31, color: "rgb(198, 25, 8)" },
-            { y: weekComparisonData.week32, color: "rgb(198, 25, 8)" },
-          ],
+          data: verticalChartData,
           pointPadding: 0.2,
           groupPadding: 0.3,
         },
       ],
-      tooltip: {
-        enabled: false,
-      },
-      legend: {
-        enabled: false,
-      },
+      tooltip: { enabled: false },
+      legend: { enabled: false },
     }),
-    []
+    [verticalChartData]
   );
 
-  // Konfigurasi Horizontal Bar Chart (Games)
+  // Konfigurasi Horizontal Bar Chart
   const horizontalChartOptions = useMemo(
     () => ({
       chart: {
@@ -146,19 +165,13 @@ const BalanceDetailCard: React.FC = () => {
         backgroundColor: "transparent",
         spacing: [0, 0, 0, 0],
       },
-      title: {
-        text: null,
-      },
-      credits: {
-        enabled: false,
-      },
+      title: { text: null },
+      credits: { enabled: false },
       yAxis: {
         min: 0,
         max: 100,
         tickPositions: [0, 25, 50, 75, 100],
-        title: {
-          text: null,
-        },
+        title: { text: null },
         labels: {
           style: {
             fontFamily: "Raleway",
@@ -172,9 +185,7 @@ const BalanceDetailCard: React.FC = () => {
       },
       xAxis: {
         categories: games.map((g) => g.name),
-        labels: {
-          enabled: false,
-        },
+        labels: { enabled: false },
         lineWidth: 0,
         tickWidth: 0,
       },
@@ -182,38 +193,26 @@ const BalanceDetailCard: React.FC = () => {
         bar: {
           borderRadius: 4,
           borderWidth: 0,
-          dataLabels: {
-            enabled: false,
-          },
-          states: {
-            hover: {
-              enabled: false,
-            },
-          },
+          dataLabels: { enabled: false },
+          states: { hover: { enabled: false } },
         },
       },
       series: [
         {
           name: "Progress",
-          data: games.map((game) => ({
-            y: gameProgressData[activeWeek][
-              game.name as keyof typeof gameProgressData.week31
-            ],
-            color: "rgb(198, 25, 8)",
-          })),
+          data: horizontalChartData,
           pointPadding: 0.1,
           groupPadding: 0.1,
         },
       ],
-      tooltip: {
-        enabled: false,
-      },
-      legend: {
-        enabled: false,
-      },
+      tooltip: { enabled: false },
+      legend: { enabled: false },
     }),
-    [activeWeek, games]
+    [horizontalChartData]
   );
+
+  // Ambil Overall Score
+  const overallScore = data?.overall?.scores?.keseimbangan || 0;
 
   return (
     <div className="bg-white rounded-lg p-6">
@@ -247,7 +246,7 @@ const BalanceDetailCard: React.FC = () => {
                 {/* Percentage Display */}
                 <div className=" flex items-end">
                   <p className="font-raleway font-bold text-[30px]  text-white">
-                    50 %
+                    {overallScore.toFixed(0)} %
                   </p>
                 </div>
               </div>
@@ -268,14 +267,14 @@ const BalanceDetailCard: React.FC = () => {
                 <div className="h-[9px] bg-white rounded-full relative">
                   {/* Progress Fill */}
                   <div
-                    className="absolute top-0 left-0 h-[9px] bg-[#084EC5]"
-                    style={{ width: "81.1%" }}
+                    className="absolute top-0 left-0 h-[9px] bg-[#084EC5] rounded-full"
+                    style={{ width: `${overallScore}%` }}
                   >
-                    {/* Marker at 81.1 */}
+                    {/* Marker at Value */}
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2">
                       <div className="flex flex-col items-center">
                         <p className="font-raleway font-semibold text-[10px] leading-[10px] text-[#0D469B] bg-white mb-4 whitespace-nowrap">
-                          81.1
+                          {overallScore.toFixed(1)}
                         </p>
                         <div className="w-px bg-[#0D469B] mt-1" />
                       </div>
@@ -297,7 +296,7 @@ const BalanceDetailCard: React.FC = () => {
         {/* Bottom Section - Week Tabs & Games Chart */}
         <div className="bg-[#FFF3ED] p-4 mt-8">
           <div className="flex gap-6">
-            {/* Left Chart - Vertical Bar Chart (Minggu 31 & 32) */}
+            {/* Left Chart - Vertical Bar Chart */}
             <div className="flex-1">
               <HighchartsReact
                 highcharts={Highcharts}
@@ -309,32 +308,22 @@ const BalanceDetailCard: React.FC = () => {
             <div className="flex-1 flex flex-col">
               {/* Week Tabs */}
               <div className="flex gap-2 mb-4 border-[#dedede] border-b-2">
-                <button
-                  onClick={() => setActiveWeek("week31")}
-                  className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
-                    activeWeek === "week31"
-                      ? "text-[#C61908] border-b-2 border-b-[#C61908]"
-                      : "text-[#C61908] hover:bg-blue-50"
-                  }`}
-                  style={{
-                    borderBottomWidth: activeWeek === "week31" ? "2px" : "0",
-                  }}
-                >
-                  Minggu 31
-                </button>
-                <button
-                  onClick={() => setActiveWeek("week32")}
-                  className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
-                    activeWeek === "week32"
-                      ? "text-[#C61908] border-b-2 border-b-[#C61908]"
-                      : "text-[#C61908] hover:bg-blue-50"
-                  }`}
-                  style={{
-                    borderBottomWidth: activeWeek === "week32" ? "2px" : "0",
-                  }}
-                >
-                  Minggu 32
-                </button>
+                {["week1", "week2", "week3", "week4"].map((week) => (
+                    <button
+                        key={week}
+                        onClick={() => setActiveWeek(week as any)}
+                        className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
+                        activeWeek === week
+                            ? "text-[#C61908] border-b-2 border-b-[#C61908]"
+                            : "text-[#C61908] hover:bg-blue-50"
+                        }`}
+                        style={{
+                        borderBottomWidth: activeWeek === week ? "2px" : "0",
+                        }}
+                    >
+                        {week.replace("week", "Minggu ")}
+                    </button>
+                ))}
               </div>
 
               {/* Date Display */}

@@ -1,16 +1,60 @@
-import React, { useState, useMemo } from "react";
-import { LucideInfo } from "lucide-react";
-import ReactionIcon from "../../../../assets/images/report/reaction-time.svg";
+import React, { useState, useMemo, useEffect } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+import { LucideInfo } from "lucide-react";
+import ReactionIcon from "../../../../assets/images/report/reaction-time.svg";
 
-interface ReactionTimeDetailCardProps {
-  ReactionTimePoint: number;
+// --- INTERFACE DATA (Sama kayak yang lain) ---
+interface GameSkillDetail {
+  waktu_reaksi: number; // Skor 0-100 (dari backend logic baru)
+  waktu_reaksi_ms: number; // Raw Data ms
 }
 
-const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ ReactionTimePoint }) => {
-  const score = ReactionTimePoint/1000;
-  const [activeWeek, setActiveWeek] = useState<"week31" | "week32">("week31");
+interface AnalyticsStats {
+  scores: { waktu_reaksi: number }; // Raw Data ms
+  game_skills?: Record<string, GameSkillDetail>;
+}
+
+interface ReportData {
+  overall: AnalyticsStats;
+  week1: AnalyticsStats;
+  week2: AnalyticsStats;
+  week3: AnalyticsStats;
+  week4: AnalyticsStats;
+}
+
+interface ReactionTimeDetailCardProps {
+  data?: ReportData | null; // Ganti props jadi Full Data
+}
+
+const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ data }) => {
+  // State Active Week (Default Week 1)
+  const [activeWeek, setActiveWeek] = useState<"week1" | "week2" | "week3" | "week4">("week1");
+
+  // Auto Select Minggu yang ada datanya
+  useEffect(() => {
+    if (data) {
+        if (data.week4.scores.waktu_reaksi > 0) setActiveWeek("week4");
+        else if (data.week3.scores.waktu_reaksi > 0) setActiveWeek("week3");
+        else if (data.week2.scores.waktu_reaksi > 0) setActiveWeek("week2");
+        else setActiveWeek("week1");
+    }
+  }, [data]);
+
+  // Logic Helper: Konversi MS ke Score 0-100 (Biar bar chart bisa naik)
+  // 0ms = 100 poin, 10000ms = 0 poin
+  const msToScore = (ms: number) => {
+    if (!ms || ms <= 0) return 0;
+    return Math.max(0, Math.min(100, ((10000 - ms) / 10000) * 100));
+  };
+
+  // --- LOGIC DATA DINAMIS ---
+  
+  // 1. Display Angka Utama (Detik)
+  const reactionMs = data?.overall?.scores?.waktu_reaksi || 0;
+  const scoreInSeconds = (reactionMs / 1000).toFixed(2); // Jadiin "1.32"
+  const progressPercent = msToScore(reactionMs); // Buat Progress Bar
+
   const games = [
     {
       name: "GELEMBUNG AJAIB",
@@ -29,29 +73,33 @@ const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ Reactio
       icon: "https://framerusercontent.com/images/SFEfgSYbe53srnzCJKt25zMYb8.png?width=538&height=506",
     },
   ];
-  // Data untuk vertical bar chart (Minggu 31 & 32)
-  const weekComparisonData = {
-    week31: 70.7,
-    week32: 79.4,
-  };
 
-  // Data untuk horizontal bar chart berdasarkan minggu
-  const gameProgressData = {
-    week31: {
-      "GELEMBUNG AJAIB": 75,
-      "PAPAN SEIMBANG": 45,
-      "TANGKAP RASA": 80,
-      "KARTU COCOK": 95,
-    },
-    week32: {
-      "GELEMBUNG AJAIB": 85,
-      "PAPAN SEIMBANG": 50,
-      "TANGKAP RASA": 85,
-      "KARTU COCOK": 100,
-    },
-  };
+  // 2. Data Vertical Chart (Minggu 1-4)
+  const verticalChartData = useMemo(() => {
+    return [
+      { y: msToScore(data?.week1?.scores?.waktu_reaksi || 0), color: "rgb(10, 93, 20)" },
+      { y: msToScore(data?.week2?.scores?.waktu_reaksi || 0), color: "rgb(10, 93, 20)" },
+      { y: msToScore(data?.week3?.scores?.waktu_reaksi || 0), color: "rgb(10, 93, 20)" },
+      { y: msToScore(data?.week4?.scores?.waktu_reaksi || 0), color: "rgb(10, 93, 20)" },
+    ];
+  }, [data]);
 
-  // Konfigurasi Vertical Bar Chart (Minggu 31 & 32)
+  // 3. Data Horizontal Chart (Per Game)
+  const horizontalChartData = useMemo(() => {
+    const currentSkills = data?.[activeWeek]?.game_skills || {};
+    
+    return games.map((game) => {
+        // Ambil skill 'waktu_reaksi' (yang sudah 0-100 dari backend)
+        const val = currentSkills[game.name]?.waktu_reaksi || 0;
+        return {
+            y: val,
+            color: "rgb(10, 93, 20)"
+        };
+    });
+  }, [data, activeWeek]);
+
+
+  // Konfigurasi Vertical Bar Chart
   const verticalChartOptions = useMemo(
     () => ({
       chart: {
@@ -60,14 +108,10 @@ const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ Reactio
         backgroundColor: "transparent",
         spacing: [0, 0, 0, 0],
       },
-      title: {
-        text: null,
-      },
-      credits: {
-        enabled: false,
-      },
+      title: { text: null },
+      credits: { enabled: false },
       xAxis: {
-        categories: ["Minggu 31", "Minggu 32"],
+        categories: ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4"],
         labels: {
           style: {
             fontFamily: "Raleway",
@@ -83,9 +127,7 @@ const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ Reactio
         min: 0,
         max: 100,
         tickPositions: [0, 20, 40, 60, 80, 100],
-        title: {
-          text: null,
-        },
+        title: { text: null },
         labels: {
           style: {
             fontFamily: "Raleway",
@@ -110,35 +152,24 @@ const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ Reactio
               color: "rgb(10, 93, 20)",
             },
             formatter: function (this: any) {
-              return this.y.toFixed(1);
+              return this.y.toFixed(0); // Tampilkan Skor (bukan detik biar grafik naik)
             },
           },
-          states: {
-            hover: {
-              enabled: false,
-            },
-          },
+          states: { hover: { enabled: false } },
         },
       },
       series: [
         {
           name: "Progress",
-          data: [
-            { y: weekComparisonData.week31, color: "rgb(10, 93, 20)" },
-            { y: weekComparisonData.week32, color: "rgb(10, 93, 20)" },
-          ],
+          data: verticalChartData,
           pointPadding: 0.2,
           groupPadding: 0.3,
         },
       ],
-      tooltip: {
-        enabled: false,
-      },
-      legend: {
-        enabled: false,
-      },
+      tooltip: { enabled: false },
+      legend: { enabled: false },
     }),
-    []
+    [verticalChartData]
   );
 
   // Konfigurasi Horizontal Bar Chart (Games)
@@ -150,19 +181,13 @@ const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ Reactio
         backgroundColor: "transparent",
         spacing: [0, 0, 0, 0],
       },
-      title: {
-        text: null,
-      },
-      credits: {
-        enabled: false,
-      },
+      title: { text: null },
+      credits: { enabled: false },
       yAxis: {
         min: 0,
         max: 100,
         tickPositions: [0, 25, 50, 75, 100],
-        title: {
-          text: null,
-        },
+        title: { text: null },
         labels: {
           style: {
             fontFamily: "Raleway",
@@ -176,9 +201,7 @@ const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ Reactio
       },
       xAxis: {
         categories: games.map((g) => g.name),
-        labels: {
-          enabled: false,
-        },
+        labels: { enabled: false },
         lineWidth: 0,
         tickWidth: 0,
       },
@@ -186,37 +209,22 @@ const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ Reactio
         bar: {
           borderRadius: 4,
           borderWidth: 0,
-          dataLabels: {
-            enabled: false,
-          },
-          states: {
-            hover: {
-              enabled: false,
-            },
-          },
+          dataLabels: { enabled: false },
+          states: { hover: { enabled: false } },
         },
       },
       series: [
         {
           name: "Progress",
-          data: games.map((game) => ({
-            y: gameProgressData[activeWeek][
-              game.name as keyof typeof gameProgressData.week31
-            ],
-            color: "rgb(10, 93, 20)",
-          })),
+          data: horizontalChartData,
           pointPadding: 0.1,
           groupPadding: 0.1,
         },
       ],
-      tooltip: {
-        enabled: false,
-      },
-      legend: {
-        enabled: false,
-      },
+      tooltip: { enabled: false },
+      legend: { enabled: false },
     }),
-    [activeWeek, games]
+    [horizontalChartData]
   );
 
   return (
@@ -248,20 +256,51 @@ const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ Reactio
                     <LucideInfo className="text-white"></LucideInfo>
                   </div>
                 </div>
-                {/* Percentage Display */}
+                {/* Percentage Display (GANTI JADI DETIK) */}
                 <div className=" flex items-end">
                   <p className="font-raleway font-bold text-[30px]  text-white">
-                    {score} s
+                    {scoreInSeconds} s
                   </p>
                 </div>
               </div>
+              
+              {/* Labels under progress bar */}
+               <div className="flex justify-between mt-[18px] mb-2">
+                  <p className="font-raleway font-semibold text-[10px] leading-[10px] text-white">
+                    10s (Lambat)
+                  </p>
+                  <p className="font-raleway font-semibold text-[10px] leading-[10px] text-white">
+                    0s (Cepat)
+                  </p>
+               </div>
+
+              {/* Progress Bar */}
+              <div className="mb-6">
+                 {/* Progress Bar Container */}
+                 <div className="h-[9px] bg-white rounded-full relative">
+                   {/* Progress Fill */}
+                   <div
+                     className="absolute top-0 left-0 h-[9px] bg-[#0A5D14] rounded-full transition-all duration-1000"
+                     style={{ width: `${progressPercent}%` }}
+                   >
+                     {/* Marker */}
+                     <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2">
+                       <div className="flex flex-col items-center">
+                         <p className="font-raleway font-semibold text-[10px] leading-[10px] text-[#0A5D14] bg-white px-1 py-0.5 rounded shadow-sm mb-4 whitespace-nowrap">
+                           {scoreInSeconds}s
+                         </p>
+                         <div className="w-px bg-[#0A5D14] mt-1" />
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+
               {/* Description */}
               <div className="mt-6">
                 <p className="font-raleway font-semibold text-[15px] leading-[18px] text-white">
                   Kemampuan untuk mendeteksi dan merespons rangsangan/isyarat
-                  yang disajikan di lingkungan permainan secara cepat,
-                  memastikan reaksi yang tepat waktu dan efisien terhadap
-                  berbagai tantangan.
+                  yang disajikan di lingkungan permainan secara cepat.
                 </p>
               </div>
             </div>
@@ -270,7 +309,7 @@ const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ Reactio
         {/* Bottom Section - Week Tabs & Games Chart */}
         <div className="bg-[#EEFFEE] p-4 mt-8">
           <div className="flex gap-6">
-            {/* Left Chart - Vertical Bar Chart (Minggu 31 & 32) */}
+            {/* Left Chart - Vertical Bar Chart */}
             <div className="flex-1">
               <HighchartsReact
                 highcharts={Highcharts}
@@ -282,32 +321,22 @@ const ReactionTimeDetailCard: React.FC<ReactionTimeDetailCardProps> = ({ Reactio
             <div className="flex-1 flex flex-col">
               {/* Week Tabs */}
               <div className="flex gap-2 mb-4 border-[#dedede] border-b-2">
-                <button
-                  onClick={() => setActiveWeek("week31")}
-                  className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
-                    activeWeek === "week31"
-                      ? "text-[#0A5D14] border-b-2 border-b-[#0A5D14]"
-                      : "text-[#0A5D14] hover:bg-blue-50"
-                  }`}
-                  style={{
-                    borderBottomWidth: activeWeek === "week31" ? "2px" : "0",
-                  }}
-                >
-                  Minggu 31
-                </button>
-                <button
-                  onClick={() => setActiveWeek("week32")}
-                  className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
-                    activeWeek === "week32"
-                      ? "text-[#0A5D14] border-b-2 border-b-[#0A5D14]"
-                      : "text-[#0A5D14] hover:bg-blue-50"
-                  }`}
-                  style={{
-                    borderBottomWidth: activeWeek === "week32" ? "2px" : "0",
-                  }}
-                >
-                  Minggu 32
-                </button>
+                {["week1", "week2", "week3", "week4"].map((week) => (
+                    <button
+                        key={week}
+                        onClick={() => setActiveWeek(week as any)}
+                        className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
+                        activeWeek === week
+                            ? "text-[#0A5D14] border-b-2 border-b-[#0A5D14]"
+                            : "text-[#0A5D14] hover:bg-green-100"
+                        }`}
+                        style={{
+                        borderBottomWidth: activeWeek === week ? "2px" : "0",
+                        }}
+                    >
+                        {week.replace("week", "Minggu ")}
+                    </button>
+                ))}
               </div>
 
               {/* Date Display */}

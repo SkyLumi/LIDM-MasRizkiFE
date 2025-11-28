@@ -6,6 +6,26 @@ import Tungkaikiri from "../../../../assets/images/report/tungkai-kiri.svg";
 import Tungkaikanan from "../../../../assets/images/report/tungkai-kanan.png";
 import Bodyfull from "../../../../assets/images/report/Bodyfull.svg";
 
+export interface DetailData {
+  scores: { 
+    ketangkasan: number;
+    // skor lain ada tapi gak dipake di card ini
+  };
+  heatmap: number[][];
+  hand_usage: { left: number; right: number };
+}
+
+// --- 2. PROPS: TERIMA DUA DATA TERPISAH ---
+export interface AgilityDetailCardProps {
+  breakdownData?: {
+    overall: DetailData;
+    week1: DetailData;
+    week2: DetailData;
+    week3: DetailData;
+    week4: DetailData;
+  };
+}
+
 const BoyHeatmapIllustration: React.FC = () => (
   <svg
     width="454"
@@ -251,47 +271,30 @@ const BoyHeatmapIllustration: React.FC = () => (
   </svg>
 );
 
-const AgilityDetailCard: React.FC = () => {
-  const [activeHeatmapTab, setActiveHeatmapTab] = useState<
-    "week31" | "week32" | "overall"
-  >("overall");
+const AgilityDetailCard: React.FC<AgilityDetailCardProps> = ({ breakdownData }) => {
 
-  // Data heatmap untuk setiap tab (4x4 grid)
-  // Format: [baris][kolom] = nilai
-  const heatmapData = {
-    week31: [
-      [50, 100, 100, 50],
-      [100, 100, 100, 100],
-      [100, 100, 100, 100],
-      [50, 10, 100, 50],
-    ],
-    week32: [
-      [60, 90, 90, 60],
-      [90, 100, 100, 90],
-      [90, 100, 100, 90],
-      [60, 20, 90, 60],
-    ],
-    overall: [
-      [50, 100, 100, 50],
-      [100, 100, 100, 100],
-      [100, 100, 100, 100],
-      [50, 10, 100, 50],
-    ],
+  const [activeTab, setActiveTab] = useState<"overall" | "week1" | "week2" | "week3" | "week4">("overall");
+  // 1. State Tab (Default: Overall)
+  const currentData = breakdownData?.[activeTab] || {
+    scores: { ketangkasan: 0 },
+    heatmap: [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
+    hand_usage: { left: 0, right: 0 }
   };
 
-  // Fungsi untuk mendapatkan warna berdasarkan nilai
+  const agilityPoint = currentData.scores.ketangkasan;
+  const heatmapGrid = currentData.heatmap;
+  const handUsage = currentData.hand_usage;
+
+  // Helper Warna Heatmap
   const getHeatmapColor = (value: number): string => {
-    if (value === 0) return "#63BE7B"; // Green - Spot lemah
-    if (value <= 25) return "#AD9473"; // Light red/pink
-    if (value <= 50) return "#D37D6E"; // Brownish-red - Spot tengah
-    if (value <= 75) return "#F7696B"; // Light red
-    return "#F7696B"; // Dark red - Spot kuat (100)
+    if (value === 0) return "#63BE7B"; // Hijau
+    if (value <= 25) return "#AD9473"; 
+    if (value <= 50) return "#D37D6E"; 
+    if (value <= 75) return "#F7696B"; 
+    return "#F7696B"; // Merah
   };
 
-  // Konfigurasi Body Usage Chart
-  
-
-  return (
+return (
     <div className="bg-white rounded-lg p-6">
       {/* Top Section - Background Image with Content */}
       <div>
@@ -320,10 +323,10 @@ const AgilityDetailCard: React.FC = () => {
                     <LucideInfo className="text-white"></LucideInfo>
                   </div>
                 </div>
-                {/* Percentage Display */}
+                {/* Percentage Display (DATA API) */}
                 <div className=" flex items-end">
                   <p className="font-raleway font-bold text-[30px]  text-white">
-                    5.2 s
+                    {agilityPoint.toFixed(1)} Points
                   </p>
                 </div>
               </div>
@@ -338,20 +341,20 @@ const AgilityDetailCard: React.FC = () => {
                 </p>
               </div>
 
-              {/* Progress Bar */}
+              {/* Progress Bar (DATA API) */}
               <div className="mb-6">
                 {/* Progress Bar Container */}
                 <div className="h-[9px] bg-white relative">
                   {/* Progress Fill */}
                   <div
                     className="absolute top-0 left-0 h-[9px] bg-[#084EC5]"
-                    style={{ width: "81.1%" }}
+                    style={{ width: `${Math.min(agilityPoint, 100)}%` }}
                   >
                     {/* Marker at 81.1 */}
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2">
                       <div className="flex flex-col items-center">
                         <p className="font-raleway font-semibold text-[10px] leading-[10px] text-[#0D469B] bg-white mb-4 whitespace-nowrap">
-                          81.1
+                          {agilityPoint.toFixed(1)}
                         </p>
                         <div className="w-px bg-[#0D469B] mt-1" />
                       </div>
@@ -371,341 +374,344 @@ const AgilityDetailCard: React.FC = () => {
             </div>
           </div>
         </div>
-        {/* Bottom Section - Week Tabs & Games Chart */}
-        {/* Heat Map Layar Section */}
-        <div className="mt-8 bg-[#FFFAEB] rounded-lg flex flex-col">
-          {/* Title */}
-          <div className="mb-4 text-left mt-5 mx-6">
-            <h3 className="font-raleway font-bold text-[20px] leading-[20px] text-[#B64C07]">
-              Heat map layar
-            </h3>
-          </div>
-          <div className="p-6 flex flex-row gap-6 justify-between">
-            <div className="flex flex-col w-[180px]">
-              {/* Heatmap Image Placeholder */}
-              <div className="mb-4 flex justify-center">
-                <img
-                  src="https://framerusercontent.com/images/sqlXWKZ8XHuRny5cPfXw0G97os.png?width=715&height=467"
-                  alt="Heat map"
-                  className="max-w-full h-auto"
-                />
-              </div>
-
-              {/* Rentang Gerak Section */}
-              <div className="mb-6 text-center">
-                <p className="font-raleway font-bold text-[14px] leading-[14px] text-[#1B1A1A] mb-2">
-                  Rentang Gerak
-                </p>
-                <p className="font-raleway font-semibold text-[14px] leading-[16px] text-[#1B1A1A]">
-                  Kemampuan anak untuk berkonsentrasi pada tugas dan rangsangan
-                  di lingkungan permainan, termasuk mempertahankan perhatian
-                  pada tujuan, tantangan, atau instruksi tertentu yang disajikan
-                  selama bermain.
-                </p>
-              </div>
+      </div>
+      
+      {/* Bottom Section - Week Tabs & Games Chart */}
+      {/* Heat Map Layar Section */}
+      <div className="mt-8 bg-[#FFFAEB] rounded-lg flex flex-col">
+        {/* Title */}
+        <div className="mb-4 text-left mt-5 mx-6">
+          <h3 className="font-raleway font-bold text-[20px] leading-[20px] text-[#B64C07]">
+            Heat map layar
+          </h3>
+        </div>
+        <div className="p-6 flex flex-row gap-6 justify-between">
+          <div className="flex flex-col w-[180px]">
+            {/* Heatmap Image Placeholder */}
+            <div className="mb-4 flex justify-center">
+              <img
+                src="https://framerusercontent.com/images/sqlXWKZ8XHuRny5cPfXw0G97os.png?width=715&height=467"
+                alt="Heat map"
+                className="max-w-full h-auto"
+              />
             </div>
 
-            <div className="flex flex-col w-full ">
-              {/* Tabs */}
-              <div className="flex gap-2 mb-6 justify-start border-b-2 border-gray-200">
-                <button
-                  onClick={() => setActiveHeatmapTab("week31")}
-                  className={`bg-transparent rounded-none px-4 py-2 font-raleway font-bold text-sm leading-[21px] transition-colors ${
-                    activeHeatmapTab === "week31"
-                      ? "text-[#B64C07] border-b-2 border-b-[#B64C07] -mb-[2px]"
-                      : "text-[#B64C07] hover:bg-orange-50"
-                  }`}
-                  style={{
-                    borderBottomWidth:
-                      activeHeatmapTab === "week31" ? "2px" : "0",
-                  }}
-                >
-                  Minggu 31
-                </button>
-                <button
-                  onClick={() => setActiveHeatmapTab("week32")}
-                  className={`px-4 py-2 bg-transparent rounded-none font-raleway font-bold text-sm leading-[21px] transition-colors ${
-                    activeHeatmapTab === "week32"
-                      ? "text-[#B64C07] border-b-2 border-b-[#B64C07] -mb-[2px]"
-                      : "text-[#B64C07] hover:bg-orange-50"
-                  }`}
-                  style={{
-                    borderBottomWidth:
-                      activeHeatmapTab === "week32" ? "2px" : "0",
-                  }}
-                >
-                  Minggu 32
-                </button>
-                <button
-                  onClick={() => setActiveHeatmapTab("overall")}
-                  className={`px-4 py-2 font-raleway rounded-none bg-transparent font-bold text-sm leading-[21px] transition-colors ${
-                    activeHeatmapTab === "overall"
-                      ? "text-[#B64C07] border-b-2 border-b-[#B64C07] -mb-[2px]"
-                      : "text-[#B64C07] hover:bg-orange-50"
-                  }`}
-                  style={{
-                    borderBottomWidth:
-                      activeHeatmapTab === "overall" ? "2px" : "0",
-                  }}
-                >
-                  Keseluruhan Progress
-                </button>
+            {/* Rentang Gerak Section */}
+            <div className="mb-6 text-center">
+              <p className="font-raleway font-bold text-[14px] leading-[14px] text-[#1B1A1A] mb-2">
+                Rentang Gerak
+              </p>
+              <p className="font-raleway font-semibold text-[14px] leading-[16px] text-[#1B1A1A]">
+                Kemampuan anak untuk berkonsentrasi pada tugas dan rangsangan
+                di lingkungan permainan, termasuk mempertahankan perhatian
+                pada tujuan, tantangan, atau instruksi tertentu yang disajikan
+                selama bermain.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col w-full ">
+            {/* Tabs */}
+            <div className="flex gap-2 mb-6 justify-start border-b-2 border-gray-200">
+              <button
+                onClick={() => setActiveTab("week1")}
+                className={`bg-transparent rounded-none px-4 py-2 font-raleway font-bold text-sm leading-[21px] transition-colors ${
+                  activeTab === "week1"
+                    ? "text-[#B64C07] border-b-2 border-b-[#B64C07] -mb-[2px]"
+                    : "text-[#B64C07] hover:bg-orange-50"
+                }`}
+                style={{
+                  borderBottomWidth:
+                    activeTab === "week1" ? "2px" : "0",
+                }}
+              >
+                Minggu 1
+              </button>
+              <button
+                onClick={() => setActiveTab("week2")}
+                className={`bg-transparent rounded-none px-4 py-2 font-raleway font-bold text-sm leading-[21px] transition-colors ${
+                  activeTab === "week2"
+                    ? "text-[#B64C07] border-b-2 border-b-[#B64C07] -mb-[2px]"
+                    : "text-[#B64C07] hover:bg-orange-50"
+                }`}
+                style={{
+                  borderBottomWidth:
+                    activeTab === "week2" ? "2px" : "0",
+                }}
+              >
+                Minggu 2
+              </button>
+              <button
+                onClick={() => setActiveTab("week3")}
+                className={`bg-transparent rounded-none px-4 py-2 font-raleway font-bold text-sm leading-[21px] transition-colors ${
+                  activeTab === "week3"
+                    ? "text-[#B64C07] border-b-2 border-b-[#B64C07] -mb-[2px]"
+                    : "text-[#B64C07] hover:bg-orange-50"
+                }`}
+                style={{
+                  borderBottomWidth:
+                    activeTab === "week3" ? "2px" : "0",
+                }}
+              >
+                Minggu 3
+              </button>
+              <button
+                onClick={() => setActiveTab("week4")}
+                className={`bg-transparent rounded-none px-4 py-2 font-raleway font-bold text-sm leading-[21px] transition-colors ${
+                  activeTab === "week4"
+                    ? "text-[#B64C07] border-b-2 border-b-[#B64C07] -mb-[2px]"
+                    : "text-[#B64C07] hover:bg-orange-50"
+                }`}
+                style={{
+                  borderBottomWidth:
+                    activeTab === "week4" ? "2px" : "0",
+                }}
+              >
+                Minggu 4
+              </button>
+              <button
+                onClick={() => setActiveTab("overall")}
+                className={`px-4 py-2 font-raleway rounded-none bg-transparent font-bold text-sm leading-[21px] transition-colors ${
+                  activeTab === "overall"
+                    ? "text-[#B64C07] border-b-2 border-b-[#B64C07] -mb-[2px]"
+                    : "text-[#B64C07] hover:bg-orange-50"
+                }`}
+                style={{
+                  borderBottomWidth:
+                    activeTab === "overall" ? "2px" : "0",
+                }}
+              >
+                Keseluruhan Progress
+              </button>
+            </div>
+
+            {/* Heatmap Grid */}
+            <div className="flex justify-center items-start gap-6 mb-6">
+              <div className="flex-1 flex justify-center  h-full">
+                {/* Custom 4x4 Grid Heatmap */}
+                <div className="relative w-full">
+                  {/* Grid Container (DATA API) */}
+                  <div className="grid grid-cols-4 border-solid border-black border-[1px] w-full h-full">
+                    {heatmapGrid.map((row, rowIndex) =>
+                      row.map((value, colIndex) => (
+                        <div
+                          key={`${rowIndex}-${colIndex}`}
+                          className="flex items-center justify-center border-[1px] border-black "
+                          style={{
+                            backgroundColor: getHeatmapColor(value),
+                          }}
+                        >
+                          <p className="font-raleway font-bold text-[24px] text-[#1F1F1F]">
+                            {value > 0 ? value : ''}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="absolute inset-0 flex items-end justify-center pointer-events-none">
+                    <BoyHeatmapIllustration />
+                  </div>
+                </div>
               </div>
 
-              {/* Heatmap Grid */}
-              <div className="flex justify-center items-start gap-6 mb-6">
-                <div className="flex-1 flex justify-center  h-full">
-                  {/* Custom 4x4 Grid Heatmap */}
-                  <div className="relative w-full">
-                    {/* Grid Container */}
-                    <div className="grid grid-cols-4 border-solid border-black border-[1px] w-full h-full">
-                      {heatmapData[activeHeatmapTab].map((row, rowIndex) =>
-                        row.map((value, colIndex) => (
-                          <div
-                            key={`${rowIndex}-${colIndex}`}
-                            className="flex items-center justify-center border-[1px] border-black "
-                            style={{
-                              backgroundColor: getHeatmapColor(value),
-                            }}
-                          >
-                            <p className="font-raleway font-bold text-[24px] text-[#1F1F1F]">
-                              {value}
-                            </p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <div className="absolute inset-0 flex items-end justify-center">
-                      <BoyHeatmapIllustration />
-                    </div>
+              {/* Color Legend */}
+              <div className="flex  items-center gap-2">
+                <div
+                  className="w-2 h-64 "
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, #63BE7B 0%, #AD9473 25%, #D37D6E 50%, #D37D6E 75%, #F7696B 100%)",
+                  }}
+                />
+                <div className="flex flex-col gap-y-12 text-center ">
+                  <div className="font-raleway font-medium text-[9.6px] text-[#333333]">
+                    0
+                  </div>
+                  <div className="font-raleway font-medium text-[9.6px] text-[#333333]">
+                    25
+                  </div>
+                  <div className="font-raleway font-medium text-[9.6px] text-[#333333]">
+                    50
+                  </div>
+                  <div className="font-raleway font-medium text-[9.6px] text-[#333333]">
+                    75
+                  </div>
+                  <div className="font-raleway font-medium text-[9.6px] text-[#333333]">
+                    100
                   </div>
                 </div>
+              </div>
 
-                {/* Color Legend */}
-                <div className="flex  items-center gap-2">
-                  <div
-                    className="w-2 h-64 "
-                    style={{
-                      background:
-                        "linear-gradient(to bottom, #63BE7B 0%, #AD9473 25%, #D37D6E 50%, #D37D6E 75%, #F7696B 100%)",
-                    }}
-                  />
-                  <div className="flex flex-col gap-y-12 text-center ">
-                    <div className="font-raleway font-medium text-[9.6px] text-[#333333]">
-                      0
-                    </div>
-                    <div className="font-raleway font-medium text-[9.6px] text-[#333333]">
-                      25
-                    </div>
-                    <div className="font-raleway font-medium text-[9.6px] text-[#333333]">
-                      50
-                    </div>
-                    <div className="font-raleway font-medium text-[9.6px] text-[#333333]">
-                      75
-                    </div>
-                    <div className="font-raleway font-medium text-[9.6px] text-[#333333]">
-                      100
-                    </div>
-                  </div>
+              {/* Legend Labels */}
+              <div className="flex flex-col gap-y-20">
+                <div className="text-center">
+                  <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
+                    Spot
+                  </p>
+                  <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
+                    lemah
+                  </p>
                 </div>
-
-                {/* Legend Labels */}
-                <div className="flex flex-col gap-y-20">
-                  <div className="text-center">
-                    <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
-                      Spot
-                    </p>
-                    <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
-                      lemah
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
-                      Spot
-                    </p>
-                    <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
-                      tengah
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
-                      Spot
-                    </p>
-                    <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
-                      kuat
-                    </p>
-                  </div>
+                <div className="text-center">
+                  <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
+                    Spot
+                  </p>
+                  <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
+                    tengah
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
+                    Spot
+                  </p>
+                  <p className="font-raleway font-medium text-[14px] leading-[16px] text-[#262626]">
+                    kuat
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Penggunaan Bagian Tubuh Section */}
-        <div className=" bg-[#FFFAEB] rounded-lg p-6">
-          {/* Title */}
-          <div className="mb-6 text-left">
-            <h3 className="font-raleway font-bold text-[20px] leading-[20px] text-[#B64C07]">
-              Penggunaan bagian tubuh
-            </h3>
+      {/* Penggunaan Bagian Tubuh Section */}
+      <div className=" bg-[#FFFAEB] rounded-lg p-6">
+        {/* Title */}
+        <div className="mb-6 text-left">
+          <h3 className="font-raleway font-bold text-[20px] leading-[20px] text-[#B64C07]">
+            Penggunaan bagian tubuh
+          </h3>
+        </div>
+        {/* Body Illustration and Chart Container */}
+        <div className="flex flex-col items-center gap-6">
+          
+          {/* Placeholder Image (Hidden if real body displayed) */}
+          <div className="flex-shrink-0" style={{ display: 'none' }}>
+            <img src="placeholder" alt="" />
           </div>
-          {/* Body Illustration and Chart Container */}
-          <div className="flex flex-col items-center gap-6">
-            {/* Body Illustration Placeholder */}
-            <div className="flex-shrink-0">
-              <img
-                src="https://framerusercontent.com/images/Container.svg"
-                alt="Body illustration"
-                className="w-48 h-64"
-                onError={(e) => {
-                  // Fallback jika gambar tidak tersedia
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
+
+          {/* Usage Percentages Display */}
+          <div className="w-full relative">
+            {/* SVG Overlay di tengah */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+             <img src={Bodyfull} alt="Body Full"/>
             </div>
 
-            {/* Body Usage Chart */}
-            {/* <div className="w-full">
-              <HighchartsReact
-                highcharts={Highcharts}
-                options={bodyUsageChartOptions}
-              />
-            </div> */}
-
-            {/* Usage Percentages Display */}
-            <div className="w-full relative">
-              {/* SVG Overlay di tengah */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-               <img src={Bodyfull}/>
-              </div>
-
-              <div className="grid grid-rows-2 gap-6">
-              {/* Hands Section */}
-              <div className="grid grid-cols-2 ">
-                {/* Left Hand */}
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-raleway font-bold text-[20px] leading-[20px] text-[#0B1E59]">
-                        43.4%
-                      </p>
-                    </div>
-                    <div className="h-[18px] border-black border-[1px] rounded bg-gray-200 overflow-hidden flex justify-end">
-                      <div
-                        className="h-full bg-[#084EC5] transition-all"
-                        style={{ width: "43.4%" }}
-                      />
-                    </div>
-                    <div className="flex items-left flex-shrink-0">
-                      <img
-                        src="https://framerusercontent.com/images/PST5BOjGP2IX4MQ0L0REnaBjujA.png?width=140&height=73"
-                        alt="Left Hand"
-                        className="w-[35px] h-[18px]  object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                      <p className="font-raleway font-bold text-sm text-[#262626]">
-                        Tangan Kiri
-                      </p>
-                    </div>
+            <div className="grid grid-rows-2 gap-6">
+            {/* Hands Section */}
+            <div className="grid grid-cols-2 ">
+              
+              {/* Left Hand (DATA API) */}
+              <div className="flex items-center">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="font-raleway font-bold text-[20px] leading-[20px] text-[#0B1E59]">
+                      {handUsage.left.toFixed(0)}%
+                    </p>
                   </div>
-                </div>
-
-                {/* Right Hand */}
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-right justify-end mb-2">
-                      <p className="font-raleway font-bold text-[20px] leading-[20px] text-[#0B1E59]">
-                        43.4%
-                      </p>
-                    </div>
-                    <div className="h-[18px] border-black border-[1px] rounded bg-gray-200 overflow-hidden flex justify-start">
-                      <div
-                        className="h-full bg-[#B64C07] transition-all"
-                        style={{ width: "43.4%" }}
-                      />
-                    </div>
-                    <div className="flex items-right justify-end flex-shrink-0">
-                      <p className="font-raleway font-bold text-sm text-[#262626]">
-                        Tangan Kanan
-                      </p>
-                      <img
-                        src="https://framerusercontent.com/images/PST5BOjGP2IX4MQ0L0REnaBjujA.png?width=140&height=73"
-                        alt="Left Hand"
-                        className="w-[35px] h-[18px]  object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    </div>
+                  <div className="h-[18px] border-black border-[1px] rounded bg-gray-200 overflow-hidden flex justify-end">
+                    <div
+                      className="h-full bg-[#084EC5] transition-all"
+                      style={{ width: `${handUsage.left.toFixed(0)}%` }}
+                    />
+                  </div>
+                  <div className="flex items-left flex-shrink-0">
+                    <img
+                      src="https://framerusercontent.com/images/PST5BOjGP2IX4MQ0L0REnaBjujA.png?width=140&height=73"
+                      alt="Left Hand"
+                      className="w-[35px] h-[18px]  object-contain"
+                    />
+                    <p className="font-raleway font-bold text-sm text-[#262626]">
+                      Tangan Kiri
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Legs Section */}
-              <div className="grid grid-cols-2">
-                {/* Left Leg */}
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-raleway font-bold text-[20px] leading-[20px] text-[#0B1E59]">
-                        43.4%
-                      </p>
-                    </div>
-                    <div className="h-[18px] border-black border-[1px] rounded bg-gray-200 overflow-hidden flex justify-end">
-                      <div
-                        className="h-full bg-[#084EC5] transition-all"
-                        style={{ width: "43.4%" }}
-                      />
-                    </div>
-                    <div className="flex items-left flex-shrink-0">
-                      <img
-                        src={Tungkaikiri}
-                        alt="Left Hand"
-                        className="w-[35px] h-[18px]  object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                      <p className="font-raleway font-bold text-sm text-[#262626]">
-                        Tungkai Kiri
-                      </p>
-                    </div>
+              {/* Right Hand (DATA API) */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex items-right justify-end mb-2">
+                    <p className="font-raleway font-bold text-[20px] leading-[20px] text-[#0B1E59]">
+                      {handUsage.right.toFixed(0)}%
+                    </p>
+                  </div>
+                  <div className="h-[18px] border-black border-[1px] rounded bg-gray-200 overflow-hidden flex justify-start">
+                    <div
+                      className="h-full bg-[#B64C07] transition-all"
+                      style={{ width: `${handUsage.right.toFixed(0)}%` }}
+                    />
+                  </div>
+                  <div className="flex items-right justify-end flex-shrink-0">
+                    <p className="font-raleway font-bold text-sm text-[#262626]">
+                      Tangan Kanan
+                    </p>
+                    <img
+                      src="https://framerusercontent.com/images/PST5BOjGP2IX4MQ0L0REnaBjujA.png?width=140&height=73"
+                      alt="Left Hand"
+                      className="w-[35px] h-[18px] object-contain transform scale-x-[-1]"
+                    />
                   </div>
                 </div>
+              </div>
+            </div>
 
-                {/* Right Leg */}
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-right justify-end mb-2">
-                      <p className="font-raleway font-bold text-[20px] leading-[20px] text-[#0B1E59]">
-                        43.4%
-                      </p>
-                    </div>
-                    <div className="h-[18px] border-black border-[1px] rounded bg-gray-200 overflow-hidden flex justify-start">
-                      <div
-                        className="h-full bg-[#B64C07] transition-all"
-                        style={{ width: "43.4%" }}
-                      />
-                    </div>
-                    <div className="flex items-right justify-end flex-shrink-0">
-                      <p className="font-raleway font-bold text-sm text-[#262626]">
-                        Tungkai Kanan
-                      </p>
-                      <img
-                        src={Tungkaikanan}
-                        alt="Left Hand"
-                        className="w-[35px] h-[18px]  object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    </div>
+            {/* Legs Section (DEFAULT 0% KARENA API BLM ADA) */}
+            <div className="grid grid-cols-2">
+              {/* Left Leg */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="font-raleway font-bold text-[20px] leading-[20px] text-[#0B1E59]">
+                      0%
+                    </p>
+                  </div>
+                  <div className="h-[18px] border-black border-[1px] rounded bg-gray-200 overflow-hidden flex justify-end">
+                    <div
+                      className="h-full bg-[#084EC5] transition-all"
+                      style={{ width: "0%" }}
+                    />
+                  </div>
+                  <div className="flex items-left flex-shrink-0">
+                    <img
+                      src={Tungkaikiri}
+                      alt="Left Hand"
+                      className="w-[35px] h-[18px]  object-contain"
+                    />
+                    <p className="font-raleway font-bold text-sm text-[#262626]">
+                      Tungkai Kiri
+                    </p>
                   </div>
                 </div>
               </div>
+
+              {/* Right Leg */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex items-right justify-end mb-2">
+                    <p className="font-raleway font-bold text-[20px] leading-[20px] text-[#0B1E59]">
+                      0%
+                    </p>
+                  </div>
+                  <div className="h-[18px] border-black border-[1px] rounded bg-gray-200 overflow-hidden flex justify-start">
+                    <div
+                      className="h-full bg-[#B64C07] transition-all"
+                      style={{ width: "0%" }}
+                    />
+                  </div>
+                  <div className="flex items-right justify-end flex-shrink-0">
+                    <p className="font-raleway font-bold text-sm text-[#262626]">
+                      Tungkai Kanan
+                    </p>
+                    <img
+                      src={Tungkaikanan}
+                      alt="Left Hand"
+                      className="w-[35px] h-[18px] object-contain"
+                    />
+                  </div>
+                </div>
               </div>
+            </div>
             </div>
           </div>
         </div>

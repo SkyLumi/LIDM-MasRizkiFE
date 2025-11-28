@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Info } from "lucide-react";
-import { getWeeklyAnalytics } from "../../../../services/api";
 
-// Import Icon
+// Import Icon (Pastikan path sesuai)
 import FokusIcon from "../../../../assets/images/skillcard/fokus.svg";
 import KeseimbanganIcon from "../../../../assets/images/skillcard/keseimbangan.svg";
 import KetangkasanIcon from "../../../../assets/images/skillcard/ketangkasan.svg";
@@ -10,8 +9,7 @@ import KoordinasiIcon from "../../../../assets/images/skillcard/koordinasi.svg";
 import MemoriIcon from "../../../../assets/images/skillcard/memori.svg";
 import WaktuIcon from "../../../../assets/images/skillcard/waktureaksi.svg";
 
-// Definisi Tipe Data dari API
-interface WeeklyStats {
+interface SkillStats {
   fokus: number;
   koordinasi: number;
   waktu_reaksi: number;
@@ -21,39 +19,11 @@ interface WeeklyStats {
 }
 
 interface SkillCardProps {
-  studentId: number; // Butuh ID Murid buat nembak API
+  stats?: SkillStats; 
 }
 
-const SkillCard: React.FC<SkillCardProps> = ({ studentId }) => {
-  
-  // State buat nyimpen data skor
-  const [stats, setStats] = useState<WeeklyStats | null>(null);
-  const [loading, setLoading] = useState(true);
+const SkillCard: React.FC<SkillCardProps> = ({ stats }) => {
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!studentId) return;
-      
-      try {
-        setLoading(true);
-        
-        const result = await getWeeklyAnalytics(studentId);
-        
-        if (result.status === 'sukses') {
-          setStats(result.data);
-        }
-      } catch (error) {
-        console.error("Gagal ambil statistik:", error);
-        // Opsional: Bisa set state error kalo mau nampilin pesan
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, [studentId]);
-
-  // Config buat Mapping Card (Biar gak copas kode 6 kali)
   const skillConfig = [
     { key: 'fokus', title: 'Fokus', icon: FokusIcon, colorStart: '#0066FF', colorEnd: '#0784cc', barColor: '#084EC5' },
     { key: 'koordinasi', title: 'Koordinasi Tangan & Mata', icon: KoordinasiIcon, colorStart: '#E82D2F', colorEnd: '#be4343', barColor: '#C21315' },
@@ -63,29 +33,35 @@ const SkillCard: React.FC<SkillCardProps> = ({ studentId }) => {
     { key: 'memori', title: 'Memori', icon: MemoriIcon, colorStart: '#FA3AB1', colorEnd: '#f584ca', barColor: '#D12890' },
   ];
 
-  if (loading) return <div className="mt-6 text-center">Memuat data statistik...</div>;
   if (!stats) return <div className="mt-6 text-center">Data tidak tersedia.</div>;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-[24px]">
       {skillConfig.map((skill) => {
-        // Ambil nilai dari state
-        // @ts-ignore (Biar TS ga rewel soal index key string)
+        // @ts-ignore
         let rawValue = stats[skill.key] || 0;
         
-        // Khusus Waktu Reaksi: Nilai kecil = Bagus (kebalikan), tapi progress bar butuh persen (0-100)
-        // Kita harus normalisasi. Misal max lambat = 2000ms (0%), 0ms = 100%.
-        let displayValue = rawValue;
-        let progressPercent = rawValue;
+        let displayValue;
+        let progressPercent;
 
         if (skill.isReactionTime) {
-            // Format: 1200 ms -> "1.2s"
-            displayValue = `${(rawValue / 1000).toFixed(2)}s`;
-            // Logika Progress Bar (Makin kecil makin penuh)
-            // Contoh kasar: 2 detik = 0%, 0.5 detik = 100%
-            progressPercent = Math.max(0, Math.min(100, (2000 - rawValue) / 20)); 
+            // === LOGIKA BARU: RANGE 0 - 10 DETIK ===
+            
+            // 1. Tampilan Teks (ms ke s)
+            if (rawValue == 9999) { 
+              displayValue = '- s' 
+            }
+            else {
+              displayValue = `${(rawValue / 1000).toFixed(2)} s`;
+            }
+            // 2. Progress Bar (Basis 10.000ms)
+            // 0ms (Cepat) = 100% Penuh
+            // 10000ms (Lambat) = 0% Kosong
+            const maxTimeMs = 10000;
+            progressPercent = Math.max(0, Math.min(100, ((maxTimeMs - rawValue) / maxTimeMs) * 100));
+
         } else {
-            // Format biasa: 85 -> "85 Points"
+            // Logic normal untuk skill lain (Skor 0-100)
             displayValue = `${Math.round(rawValue)} Points`;
             progressPercent = Math.min(100, Math.max(0, rawValue));
         }
@@ -113,8 +89,9 @@ const SkillCard: React.FC<SkillCardProps> = ({ studentId }) => {
               {/* Progress Bar Area */}
               <div className="relative mb-4">
                 <div className="flex justify-between mb-1 text-white/80 text-[10px] font-semibold font-raleway">
-                  <span>0</span>
-                  <span>100</span>
+                  {/* Label Bar Dinamis */}
+                  <span>{skill.isReactionTime ? '10s' : '0'}</span>
+                  <span>{skill.isReactionTime ? '0s' : '100'}</span>
                 </div>
                 
                 <div className="h-[8px] bg-white/30 rounded-full overflow-hidden">
@@ -125,17 +102,6 @@ const SkillCard: React.FC<SkillCardProps> = ({ studentId }) => {
                         backgroundColor: skill.barColor
                     }}
                   />
-                </div>
-                
-                {/* Marker Angka (Opsional: Floating di atas bar) */}
-                <div 
-                    className="absolute top-4 transition-all duration-1000"
-                    style={{ left: `${progressPercent}%`, transform: 'translateX(-50%)' }}
-                >
-                    <div className="w-0.5 h-2 bg-white mx-auto mb-1"></div>
-                    <span className="text-[10px] text-white font-bold bg-black/20 px-1 rounded">
-                        {skill.isReactionTime ? `${Math.round(rawValue)}ms` : Math.round(rawValue)}
-                    </span>
                 </div>
               </div>
 

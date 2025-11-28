@@ -1,17 +1,49 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import FokusIcon from "../../../../assets/images/report/fokus.svg";
 import { LucideInfo } from "lucide-react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-interface FocusDetailCardProps {
-  fokusPoint: number;
+interface GameSkillDetail {
+  fokus: number;
+  koordinasi: number;
+  keseimbangan: number;
+  ketangkasan: number;
+  memori: number;
+  waktu_reaksi: number;
 }
 
-const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
+interface AnalyticsStats {
+  scores: { fokus: number }; // Kita cuma butuh fokus di sini sebenernya
+  game_skills?: Record<string, GameSkillDetail>; // Data Baru dari Backend
+}
 
-  const [activeWeek, setActiveWeek] = useState<"week31" | "week32">("week31");
-  const games = [
+interface ReportData {
+  overall: AnalyticsStats;
+  week1: AnalyticsStats;
+  week2: AnalyticsStats;
+  week3: AnalyticsStats;
+  week4: AnalyticsStats;
+}
+
+interface FocusDetailCardProps {
+  data?: ReportData | null; // Ganti props jadi data lengkap
+}
+
+const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ data }) => {
+
+  const [activeWeek, setActiveWeek] = useState<"week1" | "week2" | "week3" | "week4">("week1");
+
+  useEffect(() => {
+    if (data) {
+        if (data.week4.scores.fokus > 0) setActiveWeek("week4");
+        else if (data.week3.scores.fokus > 0) setActiveWeek("week3");
+        else if (data.week2.scores.fokus > 0) setActiveWeek("week2");
+        else setActiveWeek("week1");
+    }
+  }, [data]);
+
+  const gamesConfig = [
     {
       name: "GELEMBUNG AJAIB",
       icon: "https://framerusercontent.com/images/5I3P3XAnbMenWJjscRxX24z5M.png?width=538&height=506",
@@ -30,11 +62,31 @@ const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
     },
   ];
 
-   // Data untuk vertical bar chart (Minggu 31 & 32)
-   const weekComparisonData = {
-    week31: 70.7,
-    week32: 79.4,
-  };
+  const verticalChartData = useMemo(() => {
+    return [
+      { name: "Minggu 1", y: data?.week1?.scores?.fokus || 0 },
+      { name: "Minggu 2", y: data?.week2?.scores?.fokus || 0 },
+      { name: "Minggu 3", y: data?.week3?.scores?.fokus || 0 },
+      { name: "Minggu 4", y: data?.week4?.scores?.fokus || 0 },
+    ];
+  }, [data]);
+
+  const horizontalChartData = useMemo(() => {
+    // Ambil data skill detail minggu ini
+    const currentWeekSkills = data?.[activeWeek]?.game_skills || {};
+
+    return gamesConfig.map((game) => {
+      const detail = currentWeekSkills[game.name]; 
+      
+      // Ambil FOKUS-nya saja dari game tersebut
+      const score = detail ? detail.fokus : 0; 
+
+      return {
+        y: score,
+        color: "rgb(8, 78, 197)",
+      };
+    });
+  }, [data, activeWeek]);
 
   const verticalChartOptions = useMemo(
     () => ({
@@ -51,7 +103,7 @@ const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
         enabled: false,
       },
       xAxis: {
-        categories: ["Minggu 31", "Minggu 32"],
+        categories: ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4"],
         labels: {
           style: {
             fontFamily: "Raleway",
@@ -107,10 +159,7 @@ const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
       series: [
         {
           name: "Progress",
-          data: [
-            { y: weekComparisonData.week31, color: "rgb(8, 78, 197)" },
-            { y: weekComparisonData.week32, color: "rgb(8, 78, 197)" },
-          ],
+          data: verticalChartData,
           pointPadding: 0.2,
           groupPadding: 0.3,
         },
@@ -124,22 +173,6 @@ const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
     }),
     []
   );
-
-  // Data untuk horizontal bar chart berdasarkan minggu
-  const gameProgressData = {
-    week31: {
-      "GELEMBUNG AJAIB": 75,
-      "PAPAN SEIMBANG": 45,
-      "TANGKAP RASA": 80,
-      "KARTU COCOK": 95,
-    },
-    week32: {
-      "GELEMBUNG AJAIB": 85,
-      "PAPAN SEIMBANG": 50,
-      "TANGKAP RASA": 85,
-      "KARTU COCOK": 100,
-    },
-  };
 
   // Konfigurasi Horizontal Bar Chart (Games)
   const horizontalChartOptions = useMemo(
@@ -175,7 +208,7 @@ const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
         gridLineWidth: 1,
       },
       xAxis: {
-        categories: games.map((g) => g.name),
+        categories: gamesConfig.map((g) => g.name),
         labels: {
           enabled: false,
         },
@@ -199,12 +232,7 @@ const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
       series: [
         {
           name: "Progress",
-          data: games.map((game) => ({
-            y: gameProgressData[activeWeek][
-              game.name as keyof typeof gameProgressData.week31
-            ],
-            color: "rgb(8, 78, 197)",
-          })),
+          data: horizontalChartData,
           pointPadding: 0.1,
           groupPadding: 0.1,
         },
@@ -216,8 +244,10 @@ const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
         enabled: false,
       },
     }),
-    [activeWeek, games]
+    [horizontalChartData]
   );
+
+  const focusPercentage = data?.overall?.scores?.fokus || 0;
 
   return (
     <div>
@@ -249,7 +279,7 @@ const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
               {/* Percentage Display */}
               <div className=" flex items-end">
                 <p className="font-raleway font-bold text-[30px]  text-white">
-                  {fokusPoint} Points
+                  {data?.overall?.scores?.fokus || 0} Points
                 </p>
               </div>
             </div>
@@ -272,13 +302,13 @@ const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
                 {/* Progress Fill */}
                 <div
                   className="absolute top-0 left-0 h-[9px] bg-[#084EC5]"
-                  style={{ width: "81.1%" }}
+                  style={{ width: focusPercentage + "%"}}
                 >
                   {/* Marker at 81.1 */}
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2">
                     <div className="flex flex-col items-center">
                       <p className="font-raleway font-semibold text-[10px] leading-[10px] text-white bg-transparent mt-7 whitespace-nowrap">
-                        {fokusPoint}
+                        {focusPercentage}
                       </p>
                       <div className="w-px bg-[#0D469B] mt-1" />
                     </div>
@@ -313,35 +343,18 @@ const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
           <div className="flex-1 flex flex-col">
             {/* Week Tabs */}
             <div className="flex gap-2 mb-4 border-[#dedede] border-b-2">
-              <button
-                onClick={() => setActiveWeek("week31")}
-                className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
-                  activeWeek === "week31"
-                    ? "text-[#084EC5] border-b-2 border-b-[#084EC5]"
-                    : "text-[#084EC5] hover:bg-blue-50"
-                }`}
-                style={{
-                  borderBottomWidth: activeWeek === "week31" ? "2px" : "0",
-                }}
-              >
-                Minggu 31
-              </button>
-              <button
-                onClick={() => setActiveWeek("week32")}
-                className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
-                  activeWeek === "week32"
-                    ? "text-[#084EC5] border-b-2 border-b-[#084EC5]"
-                    : "text-[#084EC5] hover:bg-blue-50"
-                }`}
-                style={{
-                  borderBottomWidth: activeWeek === "week32" ? "2px" : "0",
-                }}
-              >
-                Minggu 32
-              </button>
-              
+              {["week1", "week2", "week3", "week4"].map((week) => (
+                <button
+                  key={week}
+                  onClick={() => setActiveWeek(week as any)}
+                  className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] leading-[21px] transition-colors ${
+                    activeWeek === week ? "text-[#084EC5] border-b-2 border-b-[#084EC5]" : "text-[#084EC5] hover:bg-blue-50"
+                  }`}
+                >
+                  {week.replace("week", "Minggu ")}
+                </button>
+              ))}
             </div>
-
             {/* Date Display */}
             <div className="mb-6">
               <p className="font-['Raleway'] font-bold text-[12px] leading-[18px] text-[#0B1E59]">
@@ -351,7 +364,7 @@ const FocusDetailCard: React.FC<FocusDetailCardProps> = ({ fokusPoint }) => {
             <div className= "flex flex-row">
               {/* Game Icons */}
               <div className="flex flex-col justify-between items-center mt-4 bg-transparent p-4 rounded-lg">
-                {games.map((game, index) => (
+                {gamesConfig.map((game, index) => (
                   <div key={index} className="flex flex-row items-center gap-2">
                     <div className="w-9 h-9 rounded overflow-hidden">
                       <img

@@ -114,24 +114,18 @@ export const getStudents = async () => {
   return result; 
 };
 
-export const getWeeklyAnalytics = async (studentId: number) => {
-  // PENTING: Pastikan URL-nya sesuai route backend (/v1/analytics/profil/...)
-  const response = await fetch(`${BASE_URL}/v1/analytics/profil/${studentId}/weekly`, {
+export const getFullReport = async (studentId: number) => {
+  const response = await fetch(`${BASE_URL}/v1/analytics/profil/${studentId}/report/full`, {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // <--- WAJIB: Biar Backend tau ini Guru yang login
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
   });
 
   const result = await response.json();
-
-  if (!response.ok) {
-    // Kalo error 404/500, lempar error
-    throw new Error(result.message || 'Gagal mengambil data statistik');
-  }
-
-  return result; // Balikin full JSON ({ status: 'sukses', data: {...} })
+  if (!response.ok) throw new Error(result.message);
+  
+  // result.data isinya: { overall: {...}, week1: {...}, week2: {...}, ... }
+  return result; 
 };
 
 export const getGameHistory = async (studentId: number) => {

@@ -75,20 +75,18 @@ const ReportHeader: React.FC = () => {
                 07-Jul-2025 to 05-Aug-2025
               </span>
             </button>
-            <button className="px-[40px] py-2 bg-white text-black border-black rounded-lg font-raleway font-semibold text-sm hover:bg-slate-100 transition-colors">
+            {/* <button className="px-[40px] py-2 bg-white text-black border-black rounded-lg font-raleway font-semibold text-sm hover:bg-slate-100 transition-colors">
               Laporan Terbaru
-            </button>
+            </button> */}
             {/* Right: Print Button */}
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-black rounded-lg hover:bg-gray-50 transition-colors">
+            {/* <button className="flex items-center gap-2 px-4 py-2 bg-white border border-black rounded-lg hover:bg-gray-50 transition-colors">
               <Printer className="w-5 h-5 text-black " />
-            </button>
+            </button> */}
             <ChangePlayerModal
               open={isChangeOpen}
               onClose={() => setIsChangeOpen(false)}
               players={players}
-              currentPlayer={
-                currentPlayer ?? { name: "", absen: "", image: "" }
-              }
+              currentPlayer={currentPlayer || { name: "", absen: "", image: "" }}
               onConfirm={(p) => {
                 setCurrentPlayer(p);
                 setIsChangeOpen(false);
