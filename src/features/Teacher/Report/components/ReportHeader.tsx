@@ -1,11 +1,10 @@
 import React from "react";
-import { Calendar, Printer } from "lucide-react";
+import { Calendar } from "lucide-react"; 
 import ChangePlayerModal from "./ChangePlayerModal";
 import { useSelectedPlayer } from "../contexts/SelectedPlayerContext";
 
 const ReportHeader: React.FC = () => {
-  const { players, loading, currentPlayer, setCurrentPlayer } =
-    useSelectedPlayer();
+  const { players, loading, currentPlayer, setCurrentPlayer } = useSelectedPlayer();
   const [isChangeOpen, setIsChangeOpen] = React.useState(false);
 
   const safeImageSrc =
@@ -20,14 +19,18 @@ const ReportHeader: React.FC = () => {
         {/* Player Card */}
         <div className="w-[312px] bg-gradient-to-r from-[#E82D2F] to-[#C21315] rounded-2xl shadow-[inset_0_8px_16px_rgba(255,255,255,0.16),inset_0_2px_rgba(255,255,255,0.1)] p-[28px] flex items-center gap-4">
           {/* Avatar */}
-          <div className="w-[76px] h-[76px] rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
+          <div className="w-[76px] h-[76px] rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
             {safeImageSrc ? (
               <img
                 src={safeImageSrc}
                 alt={currentPlayer?.name || "Pemain"}
                 className="w-full h-full object-cover"
               />
-            ) : null}
+            ) : (
+               <span className="text-gray-400 font-bold text-2xl">
+                  {currentPlayer?.name?.charAt(0) || "?"}
+               </span>
+            )}
           </div>
 
           {/* Profile Info */}
@@ -36,8 +39,8 @@ const ReportHeader: React.FC = () => {
               {currentPlayer
                 ? currentPlayer.name
                 : loading
-                ? "Memuat pemain..."
-                : "Pemain tidak tersedia"}
+                ? "Memuat..."
+                : "Pilih Pemain"}
             </h3>
             <button
               onClick={() => setIsChangeOpen(true)}
@@ -75,18 +78,13 @@ const ReportHeader: React.FC = () => {
                 07-Jul-2025 to 05-Aug-2025
               </span>
             </button>
-            {/* <button className="px-[40px] py-2 bg-white text-black border-black rounded-lg font-raleway font-semibold text-sm hover:bg-slate-100 transition-colors">
-              Laporan Terbaru
-            </button> */}
-            {/* Right: Print Button */}
-            {/* <button className="flex items-center gap-2 px-4 py-2 bg-white border border-black rounded-lg hover:bg-gray-50 transition-colors">
-              <Printer className="w-5 h-5 text-black " />
-            </button> */}
+            
+            {/* 👇 SINI YANG DIPERBAIKI: Kirim currentPlayer langsung (boleh null), jangan pake object dummy */}
             <ChangePlayerModal
               open={isChangeOpen}
               onClose={() => setIsChangeOpen(false)}
               players={players}
-              currentPlayer={currentPlayer || { name: "", absen: "", image: "" }}
+              currentPlayer={currentPlayer} 
               onConfirm={(p) => {
                 setCurrentPlayer(p);
                 setIsChangeOpen(false);
