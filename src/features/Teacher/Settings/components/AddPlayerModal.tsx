@@ -250,7 +250,7 @@ export default function AddPlayerModal({
                         <button
                           type="button"
                           onClick={() => setClassDropdownOpen((prev) => !prev)}
-                          className={`w-full h-full pr-10 pl-5 py-4 rounded-lg border border-[#BFBFBF] box-border font-medium text-[16px] text-[#262626] outline-none cursor-pointer bg-white text-left focus-visible:border-[#0066FF] focus-visible:bg-[#EDF8FF] ${classDropdownOpen ? " shadow-[0_0_0_1px_#0066FF]" : ""}`}
+                          className={`w-full h-full pr-10 pl-5 py-4 rounded-lg border border-[#BFBFBF] box-border font-medium text-[12px] text-[#262626] outline-none cursor-pointer bg-white text-left focus-visible:border-[#0066FF] focus-visible:bg-[#EDF8FF] ${classDropdownOpen ? " shadow-[0_0_0_1px_#0066FF]" : ""}`}
                         >
                           <span className={selectedClassName ? "text-[#262626]" : "text-[#BFBFBF]"}>
                             {selectedClassName ?? "Pilih Kelas"}
@@ -308,7 +308,7 @@ export default function AddPlayerModal({
                         <button
                           type="button"
                           onClick={() => setObstacleDropdownOpen((prev) => !prev)}
-                          className={`w-full h-full pr-10 pl-5 py-4 rounded-lg border border-[#BFBFBF] box-border font-medium text-[16px] text-[#262626] outline-none cursor-pointer bg-white text-left focus-visible:border-[#0066FF] focus-visible:bg-[#EDF8FF] ${obstacleDropdownOpen ? "border-[#0066FF]" : ""}`}
+                          className={`w-full h-full pr-10 pl-5 py-4 rounded-lg border border-[#BFBFBF] box-border font-medium text-[10px] text-[#262626] outline-none cursor-pointer bg-white text-left focus-visible:border-[#0066FF] focus-visible:bg-[#EDF8FF] ${obstacleDropdownOpen ? "border-[#0066FF]" : ""}`}
                         >
                           <span className={selectedObstacleName ? "text-[#262626]" : "text-[#BFBFBF]"}>
                             {selectedObstacleName ?? "Pilih dari daftar"}

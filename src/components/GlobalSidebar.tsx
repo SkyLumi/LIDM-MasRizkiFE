@@ -144,10 +144,10 @@ const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ devRole }) => {
             {/* Games */}
             <Link
               to="/teacher/dashboard"
-              className={`flex items-center h-[40px] w-[240px] px-4 py-3 text-[18px] font-semibold rounded-[32.63px] transition-all duration-300 ${
+              className={`  flex items-center h-[40px] w-[240px] px-4 py-3 text-[18px] font-semibold rounded-[32.63px] transition-all duration-300 ${
                 isActive("/teacher/dashboard")
-                  ? "bg-white text-[#E82D2F] shadow-md"
-                  : "text-white hover:bg-white hover:bg-opacity-10"
+                  ? "bg-white text-[#E82D2F] hover:text-[#E82D2F] shadow-md"
+                  : "text-white hover:bg-white  hover:bg-opacity-10"
               }`}
             >
               <svg
@@ -181,10 +181,10 @@ const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ devRole }) => {
             {/* Reports */}
             <Link
               to="/teacher/reports"
-              className={`flex items-center h-[40px] w-[240px] px-4 py-3 text-[18px] font-semibold rounded-[32.63px] transition-all duration-300 ${
+              className={`  flex items-center h-[40px] w-[240px] px-4 py-3 text-[18px] font-semibold rounded-[32.63px] transition-all duration-300 ${
                 isActive("/teacher/reports")
-                  ? "bg-white text-[#E82D2F] shadow-md"
-                  : "text-white hover:bg-white hover:bg-opacity-10"
+                  ? "bg-white text-[#E82D2F] shadow-md "
+                  : "text-white  hover:bg-opacity-10 hover:bg-white"
               }`}
             >
               <svg
@@ -216,7 +216,7 @@ const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ devRole }) => {
               to="/teacher/settings"
               className={`flex items-center h-[40px] w-[240px] px-4 py-3 text-[18px] font-semibold rounded-[32.63px] transition-all duration-300 ${
                 isActive("/teacher/settings")
-                  ? "bg-white text-[#E82D2F] shadow-md"
+                  ? "bg-white text-[#E82D2F] hover:text-[#E82D2F] shadow-md"
                   : "text-white hover:bg-white hover:bg-opacity-10"
               }`}
             >
@@ -268,7 +268,7 @@ const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ devRole }) => {
   };
 
   return (
-    <div className="h-screen w-[288px] bg-gradient-to-b from-[#E82D2F] to-[#C21315] shadow-[inset_0_8px_16px_rgba(255,255,255,0.16),inset_0_2px_rgba(255,255,255,0.1)] flex flex-col">
+    <div className=" flex flex-col justify-between h-screen w-[288px] bg-gradient-to-b from-[#E82D2F] to-[#C21315] shadow-[inset_0_8px_16px_rgba(255,255,255,0.16),inset_0_2px_rgba(255,255,255,0.1)] ">
       {/* Logo Section */}
       <div className="flex flex-col items-center justify-center px-6 pt-[41px]">
         <img
@@ -285,7 +285,7 @@ const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ devRole }) => {
       </nav>
 
       {/* Progress Tracker */}
-      <div className="mt-[159.2px]">
+      <div className="mt-[400.2px] items-end">
         <ProgressTracker />
       </div>
     </div>

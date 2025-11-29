@@ -110,7 +110,7 @@ const ReportContent: React.FC = () => {
             <div className=" w-full h-ful  l p-[18px] bg-[#edf8ff] rounded-xl">
               <OverallProgressCard data={reportData?.overall}/>
             </div>
-            <div className=" max-h-[329px] w-full h-full bg   -[#edf8ff] rounded-xl">
+            <div className=" max-h-[329px] w-full h-full bg-[#edf8ff] rounded-xl">
               <PerformanceRadarChart stats={overallStats} />
             </div>
           </div>

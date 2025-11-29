@@ -15,7 +15,7 @@ const ProgressTracker: React.FC = () => {
 
   return (
     // CONTAINER LUAR: Digunakan untuk memposisikan kartu di tengah halaman jika diperlukan
-    <div className="flex justify-center items-center flex-col]">
+    <div className="flex justify-center items-center flex-col mb-[48px]">
       {/* KARTU UTAMA: Flex Container untuk Layout Kiri-Kanan */}
       <div className="bg-white rounded-xl p-[20px] shadow-xl w-[240px] h-[121px] flex justify-between items-center">
         {/* 1. KOLOM KIRI: Teks & Link (Lebih besar/flex-grow) */}

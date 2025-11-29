@@ -166,7 +166,7 @@ const MemoryDetailCard: React.FC<MemoryDetailCardProps> = ({ data }) => {
                 {/* Percentage Display */}
                 <div className=" flex items-end">
                   <p className="font-raleway font-bold text-[30px] text-white">
-                    80 %
+                    {overallScore.toFixed(0)} Points
                   </p>
                 </div>
               </div>
@@ -199,9 +199,9 @@ const MemoryDetailCard: React.FC<MemoryDetailCardProps> = ({ data }) => {
                 <button
                     key={week}
                     onClick={() => setActiveWeek(week as any)}
-                    className={`px-4 py-2 font-bold text-[14px] border-b-2 transition-colors ${
+                    className={`px-4 py-2 rounded-none bg-transparent font-['Raleway'] font-bold text-[14px] border-b-2 transition-colors  ${
                     activeWeek === week 
-                        ? "text-[#D11290] border-[#D11290]" 
+                        ? "text-[#D11290] border-b-[#D11290] border-b-2 " 
                         : "text-[#D11290] border-transparent hover:bg-pink-50"
                     }`}
                 >
