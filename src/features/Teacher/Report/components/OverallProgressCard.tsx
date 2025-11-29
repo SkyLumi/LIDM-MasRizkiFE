@@ -29,7 +29,10 @@ const OverallProgressCard: React.FC<OverallProgressCardProps> = ({ data }) => {
     const { fokus, koordinasi, waktu_reaksi, keseimbangan, ketangkasan, memori } = data.scores;
     
     const rawReaction = waktu_reaksi || 0;
-    const reactionScore = Math.max(0, Math.min(100, ((10000 - rawReaction) / 10000) * 100));
+    let reactionScore = 0;
+    if (rawReaction > 0) {
+        reactionScore = Math.max(0, Math.min(100, ((10000 - rawReaction) / 10000) * 100));
+    }
 
     const total = fokus + koordinasi + reactionScore + keseimbangan + ketangkasan + memori;
     return (total / 6).toFixed(1); // 1 desimal (string)
