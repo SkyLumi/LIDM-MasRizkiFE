@@ -139,7 +139,7 @@ const GameDetailContainer: React.FC = () => {
       "kartu-cocok": "https://cloudsup.id/kartu-game",
     };
     const playUrl = gameUrlMap[currentGame.id] || gameUrlMap["gelembung-game"];
-    window.open(playUrl, "_blank");
+    window.location.href = playUrl;
   };
 
   return (
