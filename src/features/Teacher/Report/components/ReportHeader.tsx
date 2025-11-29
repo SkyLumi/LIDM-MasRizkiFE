@@ -79,7 +79,7 @@ const ReportHeader: React.FC = () => {
               </span>
             </button>
             
-            {/* 👇 SINI YANG DIPERBAIKI: Kirim currentPlayer langsung (boleh null), jangan pake object dummy */}
+            {/* 👇 PERBAIKAN DI SINI: kirim currentPlayer (bisa null) */}
             <ChangePlayerModal
               open={isChangeOpen}
               onClose={() => setIsChangeOpen(false)}

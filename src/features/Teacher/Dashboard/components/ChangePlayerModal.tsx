@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Search, User, Check } from 'lucide-react';
-
-// 👇 1. KITA IMPORT 'Player' DARI CONTEXT (JANGAN BIKIN INTERFACE LOKAL LAGI)
+// 👇 1. KITA IMPORT 'Player' DARI CONTEXT BIAR TIPE DATANYA SAMA
 import type { Player } from "./../../../../../src/features/Teacher/Report/contexts/SelectedPlayerContext.tsx"; 
 
 // ========================================================================
@@ -13,8 +12,7 @@ interface ChangePlayerModalProps {
   onClose: () => void;
   onConfirm: (player: Player) => void;
   players: Player[];
-  
-  // 👇 2. KITA BOLEHKAN NULL BIAR GAK ERROR
+  // 👇 2. KITA BOLEHKAN NULL AGAR GAK ERROR SAAT DATA BELUM ADA
   currentPlayer: Player | null; 
 }
 
@@ -106,7 +104,7 @@ const PlayerItem: React.FC<{
       }`}
     >
       <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 overflow-hidden flex-shrink-0">
-        {/* 👇 3. GANTI 'avatar' JADI 'image' (SESUAI CONTEXT) */}
+        {/* 👇 FIX: Gunakan 'image' bukan 'avatar' */}
         {player.image ? (
           <img
             src={player.image}
@@ -121,7 +119,7 @@ const PlayerItem: React.FC<{
         <span className={`font-raleway font-semibold text-base ${isSelected ? 'text-[#0066FF]' : 'text-[#262626]'}`}>
           {player.name}
         </span>
-        {/* 👇 4. GANTI 'absen' JADI 'kelas' (ATAU 'id') */}
+        {/* 👇 FIX: Gunakan 'kelas' atau 'id' bukan 'absen' */}
         {/* @ts-ignore */}
         <span className="font-raleway font-normal text-sm text-[#595959]">
           {player.kelas ? `Kelas: ${player.kelas}` : `ID: ${player.id}`}
@@ -145,10 +143,11 @@ const ChangePlayerModal: React.FC<ChangePlayerModalProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
+  
+  // 👇 Default state allow null
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(currentPlayer);
   const [animStyles, setAnimStyles] = useState({ opacity: 0, transform: 'scale(0.95) translateY(10px)' });
 
-  // Button States
   const [isConfirmHovered, setIsConfirmHovered] = useState(false);
   const [isConfirmPressed, setIsConfirmPressed] = useState(false);
   const [isCancelHovered, setIsCancelHovered] = useState(false);
