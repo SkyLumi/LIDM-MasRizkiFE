@@ -133,10 +133,10 @@ const GameDetailContainer: React.FC = () => {
 
   const handlePlay = () => {
     const gameUrlMap: { [key: string]: string } = {
-      "gelembung-game": "https://cloudsup.bayangan.xyz/gelembung-game",
-      "tangkap-rasa": "https://cloudsup.bayangan.xyz/tangkap-game",
-      "papan-seimbang": "https://cloudsup.bayangan.xyz/papan-game",
-      "kartu-cocok": "https://cloudsup.bayangan.xyz/kartu-game",
+      "gelembung-game": "https://cloudsup.id/gelembung-game",
+      "tangkap-rasa": "https://cloudsup.id/tangkap-game",
+      "papan-seimbang": "https://cloudsup.id/papan-game",
+      "kartu-cocok": "https://cloudsup.id/kartu-game",
     };
     const playUrl = gameUrlMap[currentGame.id] || gameUrlMap["gelembung-game"];
     window.open(playUrl, "_blank");
