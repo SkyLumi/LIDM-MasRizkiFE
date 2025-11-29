@@ -25,7 +25,11 @@ const PerformanceRadarChart: React.FC<PerformanceRadarChartProps> = ({ stats }) 
     // a. Konversi Waktu Reaksi (ms) ke Skor (0-100)
     // 0ms = 100, 10000ms = 0
     const rawReaction = stats.waktu_reaksi || 0;
-    const reactionScore = Math.max(0, Math.min(100, ((10000 - rawReaction) / 10000) * 100));
+    let reactionScore = 0;
+    
+    if (rawReaction > 0) {
+       reactionScore = Math.max(0, Math.min(100, ((10000 - rawReaction) / 10000) * 100));
+    }
 
     // b. Ambil skill lain (udah 0-100)
     const { ketangkasan, fokus, koordinasi, keseimbangan, memori } = stats;

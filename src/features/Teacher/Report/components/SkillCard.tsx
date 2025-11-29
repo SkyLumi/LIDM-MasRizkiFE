@@ -213,7 +213,7 @@ const SkillCard: React.FC<SkillCardProps> = ({ stats }) => {
         if (skill.isReactionTime) {
             // Logic Waktu Reaksi (MS -> Detik)
             if (rawValue >= 9999 || rawValue === 0) { 
-              displayValue = '- s';
+              displayValue = '0 s';
             } else {
               displayValue = `${(rawValue / 1000).toFixed(2)}s`;
             }
