@@ -14,7 +14,7 @@ const ProgressTracker: React.FC = () => {
           {/* Teks Utama */}
           <div className="flex flex-col">
             <p className="font-bold text-[14px] text-gray-800 text-left w-[128px]">
-              Main setidaknya 20 menit/minggu
+              Main minimal 20 menit/minggu
             </p>
           </div>
 
