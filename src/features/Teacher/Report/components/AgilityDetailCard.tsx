@@ -502,7 +502,7 @@ return (
                           }}
                         >
                           <p className="font-raleway font-bold text-[24px] text-[#1F1F1F]">
-                            {value > 0 ? value : ''}
+                            {value > 0 ? value : '0'}
                           </p>
                         </div>
                       ))
