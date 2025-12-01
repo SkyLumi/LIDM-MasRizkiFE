@@ -151,7 +151,11 @@ const ReportContent: React.FC = () => {
           <SkillCard stats={overallStats} />
 
           {/* Game History Section (Pass month/year filter juga jika perlu) */}
-          <GameHistorySection studentId={currentPlayer.id} />
+          {/* 👇👇👇 DI SINI BANG PERUBAHANNYA 👇👇👇 */}
+          <GameHistorySection 
+            studentId={currentPlayer.id} 
+            selectedDate={selectedDate} // <--- Tambahin ini biar heatmap ikut berubah
+          />
 
           {/* Overall Progress Report Card */}
           <OverallProgressReportCard data={reportData}/>

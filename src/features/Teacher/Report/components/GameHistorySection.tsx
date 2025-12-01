@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
-import { getGameHistory } from '../../../../services/api'; // <--- 1. Import API
+import { getGameHistory } from '../../../../services/api';
 
-// --- 2. CONFIG GAMBAR (BIAR TAMPILAN TETEP SAMA) ---
 const GAME_ICONS: Record<string, string> = {
   'GELEMBUNG AJAIB': 'https://framerusercontent.com/images/5I3P3XAnbMenWJjscRxX24z5M.png?width=538&height=506',
   'PAPAN SEIMBANG': 'https://framerusercontent.com/images/FR7BN9QpiRVUPGBwQnTS1gd1rQo.png?width=538&height=506',
@@ -20,31 +19,35 @@ const GAME_COLORS: Record<string, string> = {
 
 interface GameHistoryProps {
   studentId: number;
+  selectedDate: Date; // 👇 Tambahan Props Tanggal
 }
 
-const GameHistorySection: React.FC<GameHistoryProps> = ({ studentId }) => {
+const GameHistorySection: React.FC<GameHistoryProps> = ({ studentId, selectedDate }) => {
   const [activeTab, setActiveTab] = useState<'games' | 'time'>('games');
   const [loading, setLoading] = useState(true);
 
-  // --- 3. STATE DATA (DARI API) ---
   const [games, setGames] = useState<any[]>([]);
   const [heatmapData, setHeatmapData] = useState<number[][]>([]);
   const [playTimeData, setPlayTimeData] = useState<any[]>([]);
   const [playTimeHeatmapData, setPlayTimeHeatmapData] = useState<number[][]>([]);
   const [weeks, setWeeks] = useState<string[]>([]);
 
-  // --- 4. FETCH DATA ---
   useEffect(() => {
     const fetchData = async () => {
       if (!studentId) return;
       try {
         setLoading(true);
-        const result = await getGameHistory(studentId);
+        
+        // 👇 Ambil bulan & tahun dari props
+        const month = selectedDate.getMonth() + 1;
+        const year = selectedDate.getFullYear();
+
+        const result = await getGameHistory(studentId, month, year);
 
         if (result.status === 'sukses') {
           const stats = result.games_stats;
           
-          // Map Data Games Count
+          // Map Games Count
           const processedGames = Object.keys(GAME_ICONS).map(name => ({
             name,
             value: stats[name]?.count || 0,
@@ -53,7 +56,7 @@ const GameHistorySection: React.FC<GameHistoryProps> = ({ studentId }) => {
           }));
           setGames(processedGames);
 
-          // Map Data Play Time
+          // Map Play Time
           const processedTime = Object.keys(GAME_ICONS).map(name => ({
             name,
             value: stats[name]?.duration_minutes || 0,
@@ -62,21 +65,24 @@ const GameHistorySection: React.FC<GameHistoryProps> = ({ studentId }) => {
           }));
           setPlayTimeData(processedTime);
 
-          // Map Heatmap
-          setHeatmapData(result.heatmap.games);
-          setPlayTimeHeatmapData(result.heatmap.time);
-          setWeeks(result.heatmap.weeks);
+          // Map Heatmap (FORCE 4 MINGGU AJA)
+          // Kita slice(0, 4) biar kalau backend ngasih 5, tetep tampil 4 dan rapi
+          setHeatmapData(result.heatmap.games.slice(0, 4));
+          setPlayTimeHeatmapData(result.heatmap.time.slice(0, 4));
+          setWeeks(result.heatmap.weeks.slice(0, 4));
         }
       } catch (err) {
         console.error(err);
+        // Reset data kalo error/kosong
+        setGames([]);
+        setHeatmapData([]);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [studentId]);
+  }, [studentId, selectedDate]); // 👇 Trigger ulang saat tanggal berubah
 
-  // --- 5. CONFIG LAIN (GAK DIUBAH) ---
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jum\'at', 'Sabtu', 'Minggu'];
 
   const getHeatmapColor = (value: number, maxValue: number = 15) => {
@@ -190,11 +196,10 @@ const GameHistorySection: React.FC<GameHistoryProps> = ({ studentId }) => {
       {/* Content */}
       {activeTab === 'games' && (
         <>
-          {/* Bar Chart dengan Highcharts */}
+          {/* Bar Chart */}
           <div className="mb-8 relative">
             <HighchartsReact highcharts={Highcharts} options={gamesChartOptions} />
             
-            {/* Game Icons and Labels */}
             <div className="flex justify-between mt-4 px-4">
                 {games.map((game, index) => (
                 <div key={index} className="flex flex-col items-center gap-1 flex-1">
@@ -224,7 +229,7 @@ const GameHistorySection: React.FC<GameHistoryProps> = ({ studentId }) => {
               {/* Y-axis: Minggu (Vertical) */}
               <div className="flex flex-col justify-between py-2 pr-2 min-w-[80px]">
                 {weeks.map((week, index) => (
-                  <p key={index} className="font-['Raleway'] text-[9.6px] text-[#333333] text-right h-[calc(100%/5)] flex items-center">
+                  <p key={index} className="font-['Raleway'] text-[9.6px] text-[#333333] text-right h-[calc(100%/4)] flex items-center">
                     {week}
                   </p>
                 ))}
@@ -304,7 +309,7 @@ const GameHistorySection: React.FC<GameHistoryProps> = ({ studentId }) => {
             <div className="flex gap-2">
               <div className="flex flex-col justify-between py-2 pr-2 min-w-[80px]">
                 {weeks.map((week, index) => (
-                  <p key={index} className="font-['Raleway'] text-[9.6px] text-[#333333] text-right h-[calc(100%/5)] flex items-center">
+                  <p key={index} className="font-['Raleway'] text-[9.6px] text-[#333333] text-right h-[calc(100%/4)] flex items-center">
                     {week}
                   </p>
                 ))}
