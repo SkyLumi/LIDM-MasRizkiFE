@@ -114,8 +114,14 @@ export const getStudents = async () => {
   return result; 
 };
 
-export const getFullReport = async (studentId: number) => {
-  const response = await fetch(`${BASE_URL}/v1/analytics/profil/${studentId}/report/full`, {
+export const getFullReport = async (studentId: number, month?: number, year?: number) => {
+  const params = new URLSearchParams();
+  if (month) params.append('month', month.toString());
+  if (year) params.append('year', year.toString());
+
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  const response = await fetch(`${BASE_URL}/v1/analytics/profil/${studentId}/report/full${queryString}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -124,9 +130,9 @@ export const getFullReport = async (studentId: number) => {
   const result = await response.json();
   if (!response.ok) throw new Error(result.message);
   
-  // result.data isinya: { overall: {...}, week1: {...}, week2: {...}, ... }
   return result; 
 };
+
 
 export const getGameHistory = async (studentId: number) => {
   const response = await fetch(`${BASE_URL}/v1/analytics/history/${studentId}`, {

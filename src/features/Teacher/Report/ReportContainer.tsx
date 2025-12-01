@@ -1,5 +1,6 @@
-import { useState, useEffect }from "react";
-import { getFullReport } from "../../../services/api";
+import React, { useState, useEffect } from "react";
+// 👇 Pastikan getFullReport support params (id, month, year)
+import { getFullReport } from "../../../services/api"; 
 import {
   ReportHeader,
   OverallProgressCard,
@@ -14,9 +15,9 @@ import {
   AgilityDetailCard,
   MemoryDetailCard,
 } from "./components";
-// import { Gamepad2, Clock } from 'lucide-react';
 import { SelectedPlayerProvider, useSelectedPlayer } from "./contexts/SelectedPlayerContext";
 
+// Interface Data (Sesuai update terakhir)
 export interface AnalyticsStats {
   scores: {
     fokus: number;
@@ -28,9 +29,10 @@ export interface AnalyticsStats {
   };
   heatmap: number[][];
   hand_usage: { left: number; right: number };
-
+  
   period_average: number;
   game_scores: Record<string, number>;
+  game_skills?: Record<string, any>; // Data detail per skill per game
   meta: {
     total_games: number;
     total_minutes: number;
@@ -50,17 +52,30 @@ const ReportContent: React.FC = () => {
   const [reportData, setReportData] = useState<FullReportData | null>(null);
   const [loadingReport, setLoadingReport] = useState(false);
 
+  // --- STATE TANGGAL (FILTER) ---
+  // Default: new Date() -> Hari ini
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
   useEffect(() => {
     const fetchData = async () => {
       if (!currentPlayer?.id) return;
 
       try {
         setLoadingReport(true);
-        // Panggil API Super
-        const result = await getFullReport(currentPlayer.id);
+        
+        // Ambil Bulan & Tahun dari state selectedDate
+        const month = selectedDate.getMonth() + 1; // JS Month mulai dari 0
+        const year = selectedDate.getFullYear();
+
+        // Panggil API dengan filter
+        // Pastikan backend & api service support params ini
+        const result = await getFullReport(currentPlayer.id, month, year); 
         
         if (result.status === 'sukses') {
           setReportData(result.data);
+        } else {
+           // Handle jika data kosong/error
+           setReportData(null);
         }
       } catch (error) {
         console.error("Gagal load report:", error);
@@ -70,44 +85,61 @@ const ReportContent: React.FC = () => {
     };
 
     fetchData();
-  }, [currentPlayer]);
+  }, [currentPlayer, selectedDate]); // Re-fetch saat player ganti ATAU tanggal ganti
 
   // Tampilan Loading / Belum Pilih
   if (loadingPlayer || loadingReport) {
     return <div className="p-10 text-center font-raleway text-gray-500">Memuat data...</div>;
   }
 
-  // 2. Sudah selesai loading, tapi emang GAK ADA murid di database?
+  // Jika tidak ada murid
   if (players.length === 0) {
+     // Kita butuh Header dummy biar tetep bisa lihat UI (opsional)
+     // Tapi karena Header butuh props, kita skip dulu atau render basic
      return (
         <div className="p-10 flex flex-col items-center justify-center min-h-screen">
-            <ReportHeader />
             <div className="mt-10 font-raleway text-red-500">Belum ada data murid di kelas ini.</div>
         </div>
     );
   }
 
   if (!currentPlayer || !reportData) {
-    return <div className="p-10 text-center font-raleway text-gray-500">Menyiapkan data...</div>;
+    // Tampilkan Header meskipun data kosong, biar bisa ganti tanggal/pemain
+    return (
+        <div className="flex gap-6">
+             <div className="flex-1 flex flex-col m-[40px]">
+                <div className="flex mb-5">
+                    <ReportHeader 
+                        selectedDate={selectedDate} 
+                        onDateChange={setSelectedDate} 
+                    />
+                </div>
+                <div className="p-10 text-center font-raleway text-gray-500">
+                    Data tidak tersedia untuk periode ini.
+                </div>
+             </div>
+        </div>
+    );
   }
 
-  // Ambil data Overall buat kartu-kartu kecil (default)
+  // Ambil data Overall buat kartu-kartu kecil
   const overallStats = reportData.overall.scores;
   
-
   return (
-    // <SelectedPlayerProvider>
       <div className="flex gap-6">
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col m-[40px]">
-          {/* Header with Player Info & Date Range */}
+          {/* Header: Pass State & Handler */}
           <div className="flex mb-5">
-            <ReportHeader />
+            <ReportHeader 
+                selectedDate={selectedDate}
+                onDateChange={(date) => setSelectedDate(date)}
+            />
           </div>
 
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px] ">
-            <div className=" w-full h-ful  l p-[18px] bg-[#edf8ff] rounded-xl">
+            <div className=" w-full h-full p-[18px] bg-[#edf8ff] rounded-xl">
               <OverallProgressCard data={reportData?.overall}/>
             </div>
             <div className=" max-h-[329px] w-full h-full bg-[#edf8ff] rounded-xl">
@@ -115,36 +147,24 @@ const ReportContent: React.FC = () => {
             </div>
           </div>
 
-          {/* Skill Cards Grid - 3x2 */}
-          
+          {/* Skill Cards Grid */}
           <SkillCard stats={overallStats} />
 
-          {/* Game History Section */}
+          {/* Game History Section (Pass month/year filter juga jika perlu) */}
           <GameHistorySection studentId={currentPlayer.id} />
 
           {/* Overall Progress Report Card */}
           <OverallProgressReportCard data={reportData}/>
 
-          {/* Focus Detail Card */}
+          {/* Detail Cards */}
           <FocusDetailCard data={reportData}  />
-
-          {/* Coordination Detail Card */}
           <CoordinationDetailCard data={reportData}/>
-
-          {/* Reaction Time Detail Card */}
           <ReactionTimeDetailCard data={reportData}/>
-
-          {/* Balance Detail Card */}
           <BalanceDetailCard data={reportData}/>
-
-          {/* Agility Detail Card */}
           <AgilityDetailCard breakdownData={reportData as any}/>
-
-          {/* Memory Detail Card */}
           <MemoryDetailCard data={reportData}/>
         </div>
       </div>
-    // </SelectedPlayerProvider>
   );
 };
 
