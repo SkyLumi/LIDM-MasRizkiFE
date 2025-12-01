@@ -4,7 +4,7 @@ import sidebarLogo from "../assets/images/sidebar-logo.svg";
 import dashboardIcon from "../assets/images/sidebar/games.svg";
 import reportsIcon from "../assets/images/sidebar/laporan.svg";
 // import settingsIcon from "../assets/images/sidebar/pengaturan.svg";
-import ProgressTracker from "./ProgressTracker";
+// import ProgressTracker from "./ProgressTracker";
 import { useAuthContext } from "../contexts/AuthContext";
 
 interface GlobalSidebarProps {
@@ -285,9 +285,9 @@ const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ devRole }) => {
       </nav>
 
       {/* Progress Tracker */}
-      <div className="mt-[400.2px] items-end">
+      {/* <div className="mt-[400.2px] items-end">
         <ProgressTracker />
-      </div>
+      </div> */}
     </div>
   );
 };
