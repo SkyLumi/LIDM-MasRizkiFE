@@ -285,9 +285,9 @@ const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ devRole }) => {
       </nav>
 
       {/* Progress Tracker */}
-      {/* <div className="mt-[400.2px] items-end">
-        <ProgressTracker />
-      </div> */}
+      <div className="mt-[400.2px] items-end">
+        {/* <ProgressTracker /> */}
+      </div>
     </div>
   );
 };
