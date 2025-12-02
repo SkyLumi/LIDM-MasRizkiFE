@@ -159,6 +159,7 @@ export const updateStudent = async (id: string | number, data: any) => {
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   });
 
