@@ -152,3 +152,19 @@ export const getGameHistory = async (studentId: number, month?: number, year?: n
   
   return result;
 };
+
+export const updateStudent = async (id: string | number, data: any) => {
+  const response = await fetch(`${BASE_URL}/v1/murid/${id}`, { // Sesuaikan endpoint backend abang
+    method: 'PUT', // atau PATCH
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.message || "Gagal mengupdate data pemain");
+  }
+  return result;
+};
