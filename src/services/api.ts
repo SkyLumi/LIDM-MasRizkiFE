@@ -154,7 +154,7 @@ export const getGameHistory = async (studentId: number, month?: number, year?: n
 };
 
 export const updateStudent = async (id: string | number, data: any) => {
-  const response = await fetch(`${BASE_URL}/v1/murid/${id}`, { // Sesuaikan endpoint backend abang
+  const response = await fetch(`${BASE_URL}/v1/guru/murid/${id}`, { // Sesuaikan endpoint backend abang
     method: 'PUT', // atau PATCH
     headers: {
       'Content-Type': 'application/json',
